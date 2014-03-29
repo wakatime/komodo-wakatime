@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE overlay SYSTEM "chrome://komodowakatime/locale/komodowakatime.dtd" >
+
+<overlay id="komodowakatime"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script type="application/x-javascript"
+          src="chrome://komodowakatime/content/komodowakatime.js" />
+
+</overlay>
+
