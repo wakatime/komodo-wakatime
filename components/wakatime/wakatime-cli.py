@@ -17,6 +17,4 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wakatime
 
 if __name__ == '__main__':
-    with open('/Users/marcelluspelcher/wakatimelog.log', 'a') as filehandle:
-      filehandle.write(str(sys.argv))
     sys.exit(wakatime.main(sys.argv))
