@@ -7,7 +7,8 @@
     <em:name>WakaTime</em:name>
     <em:version>0.4.4</em:version>
     <em:description>Automatic time tracking with analytics about your programming</em:description>
-    <em:creator>Marcellus Pelcher</em:creator>
+    <em:creator>Alan Hamlett @alanhamlett</em:creator>
+    <em:contributor>Marcellus Pelcher @SysCoder</em:contributor>
     <em:homepageURL>https://wakatime.com</em:homepageURL>
     <em:type>2</em:type> <!-- type=extension --> 
 
