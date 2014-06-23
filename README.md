@@ -16,11 +16,12 @@ Features
 Installation
 ------------
 
-1. zip package.xpi *
-2. In Komodo Edit IDE follow these steps: Tools -> Add Ons -> [Gear Box] -> Install Add-on From File.
-3. Find and select the package.xpi file and open file.
-4. Click Install Now
-5. Click Restart Now
+1. In Komodo navigate to: `Tools` -> `Add Ons` then search for `WakaTime`.
+2. Click on the xpi file to install.
+3. Restart Komodo.
+4. Enter your [api key](https://wakatime.com/#apikey) when prompted.
+5. Use Komodo and your time will automatically be tracked for you.
+6. Visit https://wakatime.com to see your logged time.
 
 Screen Shots
 ------------
