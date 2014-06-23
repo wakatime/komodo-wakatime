@@ -4,11 +4,11 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>komodo-wakatime@wakatime.com</em:id>
     <em:unpack>true</em:unpack>
-    <em:name>Komodo Wakatime</em:name>
+    <em:name>WakaTime</em:name>
     <em:version>0.4.4</em:version>
-    <em:description>Time tracker for coding</em:description>
+    <em:description>Automatic time tracking with analytics about your programming</em:description>
     <em:creator>Marcellus Pelcher</em:creator>
-    <em:homepageURL>www.wakatime.com</em:homepageURL>
+    <em:homepageURL>https://wakatime.com</em:homepageURL>
     <em:type>2</em:type> <!-- type=extension --> 
 
     <em:targetApplication> <!-- Komodo IDE -->

@@ -1,11 +1,9 @@
-komodo-wakatime  **Alpha Release**
-================
+komodo-wakatime
+===============
 
-Fully automatic time tracking for Komodo Edit.
+Fully automatic time tracking for Komodo.
 
-This is a plugin for the wakatime web application.
-
-[Visit Wakatime](www.wakatime.com)
+This is a plugin for the [WakaTime](https://wakatime.com) web application.
 
 Installation
 ------------
@@ -16,11 +14,7 @@ Installation
 4. Click Install Now
 5. Click Restart Now
 
-
-
-
 Screen Shots
 ------------
 
 ![Project Overview](https://wakatime.com/static/img/ScreenShots/Screen Shot 2013-10-26 at 5.04.01 PM.png)
-
