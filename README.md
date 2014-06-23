@@ -5,6 +5,14 @@ Fully automatic time tracking for Komodo.
 
 This is a plugin for the [WakaTime](https://wakatime.com) web application.
 
+Features
+--------
+
+* Detects project name from revision control software. (ex: git, subversion, mercurial)
+* Language breakdown showing your most-used programming languages.
+* Monthly, weekly, or daily email summaries.
+* See logged time per project or branch.
+
 Installation
 ------------
 
