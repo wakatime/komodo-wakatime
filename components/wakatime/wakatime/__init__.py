@@ -13,7 +13,7 @@
 from __future__ import print_function
 
 __title__ = 'wakatime'
-__version__ = '2.0.1'
+__version__ = '2.0.3'
 __author__ = 'Alan Hamlett'
 __license__ = 'BSD'
 __copyright__ = 'Copyright 2014 Alan Hamlett'
@@ -39,13 +39,17 @@ except ImportError:
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'packages'))
+
 from .queue import Queue
 from .log import setup_logging
 from .project import find_project
 from .stats import get_file_stats
 from .packages import argparse
 from .packages import simplejson as json
-from .packages import tzlocal
+try:
+    from .packages import tzlocal
+except:
+    from .packages import tzlocal3
 
 
 log = logging.getLogger(__name__)
@@ -310,6 +314,11 @@ def send_action(project=None, branch=None, stats=None, key=None, targetFile=None
                     'response_code': response.getcode(),
                     'response_content': response.read(),
                 })
+            else:
+                log.error({
+                    'response_code': response.getcode(),
+                    'response_content': response.read(),
+                })
         else:
             log.error({
                 'response_code': response.getcode(),
@@ -339,10 +348,10 @@ def main(argv=None):
 
         project = find_project(args.targetFile, configs=configs)
         branch = None
-        project_name = None
+        project_name = args.project_name
         if project:
             branch = project.branch()
-            project_name = args.project_name or project.name()
+            project_name = project.name()
 
         if send_action(
                 project=project_name,
