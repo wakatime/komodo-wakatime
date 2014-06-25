@@ -19,12 +19,15 @@ var komodoWakatime = {
             thisObject.api_key = prefs.getStringPref(pref_name);
         }
     },
+    log: function(msg) {
+        ko.logging.getLogger('').warn(msg);
+    },
     apiClientLocation: function () {
         var currProfPath = Components.classes["@mozilla.org/file/directory_service;1"]
           .getService(Components.interfaces.nsIProperties)
           .get("PrefD", Components.interfaces.nsILocalFile)
           .path;
-        var plugin_dir = currProfPath + '/extensions/komodo-wakatime@wakatime.com';
+        var plugin_dir = currProfPath + '/extensions/wakatime@wakatime.com';
         return plugin_dir + '/components/wakatime/wakatime-cli.py';
     },
     promptForAPIKey: function () {
@@ -47,7 +50,8 @@ var komodoWakatime = {
         var fileName = thisObject.getFileName(thisObject);
         var cmd = 'python ' +
           thisObject.apiClientLocation().replace(/(@)/g, "\\@").replace(/(\s)/g, "\\ ") +
-          ' ' + cmdWriteFlag + ' --file ' + fileName + ' --plugin komodo/0.4.4';
+          ' ' + cmdWriteFlag + ' --file ' + fileName + ' --plugin komodo-wakatime/1.0.0' +
+          ' --key ' + thisObject.api_key;
         var runSvc = Components.classes["@activestate.com/koRunService;1"]
           .createInstance(Components.interfaces.koIRunService);
         var process = runSvc.RunAndNotify(cmd, '', '', '');
