@@ -1,4 +1,7 @@
 var komodoWakatime = {
+
+    VERSION: '1.0.1',
+
     action_frequency: 2,
     time: 0,
     api_key: '',
@@ -50,7 +53,7 @@ var komodoWakatime = {
         var fileName = thisObject.getFileName(thisObject);
         var cmd = 'python ' +
           thisObject.apiClientLocation().replace(/(@)/g, "\\@").replace(/(\s)/g, "\\ ") +
-          ' ' + cmdWriteFlag + ' --file ' + fileName + ' --plugin komodo-wakatime/1.0.0' +
+          ' ' + cmdWriteFlag + ' --file ' + fileName + ' --plugin komodo-wakatime/'+ thisObject.VERSION +
           ' --key ' + thisObject.api_key;
         var runSvc = Components.classes["@activestate.com/koRunService;1"]
           .createInstance(Components.interfaces.koIRunService);
