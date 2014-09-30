@@ -3,6 +3,13 @@ History
 -------
 
 
+1.0.2 (2014-09-30)
+++++++++++++++++++
+
+- upgrade external wakatime package to v2.1.0
+- python3 compatibility changes
+
+
 1.0.1 (2014-07-25)
 ++++++++++++++++++
 
