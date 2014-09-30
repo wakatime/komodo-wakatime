@@ -15,6 +15,7 @@ import platform
 from subprocess import Popen, PIPE
 
 from .base import BaseProject
+from ..compat import u, open
 try:
     from collections import OrderedDict
 except ImportError:
@@ -24,25 +25,38 @@ except ImportError:
 log = logging.getLogger('WakaTime')
 
 
-# str is unicode in Python3
-try:
-    unicode
-except NameError:
-    unicode = str
-
-
 class Subversion(BaseProject):
+    binary_location = None
 
     def process(self):
         return self._find_project_base(self.path)
 
     def name(self):
-        return unicode(self.info['Repository Root'].split('/')[-1])
+        return u(self.info['Repository Root'].split('/')[-1])
 
     def branch(self):
         if self.base:
-            unicode(os.path.basename(self.base))
+            u(os.path.basename(self.base))
         return None
+
+    def _find_binary(self):
+        if self.binary_location:
+            return self.binary_location
+        locations = [
+            'svn',
+            '/usr/bin/svn',
+            '/usr/local/bin/svn',
+        ]
+        for location in locations:
+            with open(os.devnull, 'wb', encoding='utf-8') as DEVNULL:
+                try:
+                    Popen([location, '--version'], stdout=DEVNULL, stderr=DEVNULL)
+                    self.binary_location = location
+                    return location
+                except:
+                    pass
+        self.binary_location = 'svn'
+        return 'svn'
 
     def _get_info(self, path):
         info = OrderedDict()
@@ -50,7 +64,7 @@ class Subversion(BaseProject):
         try:
             os.environ['LANG'] = 'en_US'
             stdout, stderr = Popen([
-                'svn', 'info', os.path.realpath(path)
+                self._find_binary(), 'info', os.path.realpath(path)
             ], stdout=PIPE, stderr=PIPE).communicate()
         except OSError:
             pass
