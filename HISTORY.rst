@@ -3,6 +3,13 @@ History
 -------
 
 
+1.0.4 (2014-11-10)
+++++++++++++++++++
+
+- upgrade external wakatime package to v2.1.3
+- correctly detect branch for subversion projects
+
+
 1.0.3 (2014-09-30)
 ++++++++++++++++++
 
