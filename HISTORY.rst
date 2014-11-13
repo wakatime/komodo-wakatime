@@ -3,6 +3,13 @@ History
 -------
 
 
+1.0.5 (2014-11-12)
+++++++++++++++++++
+
+- upgrade external wakatime package to v2.1.4
+- when Python was not compiled with https support, log an error to the log file
+
+
 1.0.4 (2014-11-10)
 ++++++++++++++++++
 
