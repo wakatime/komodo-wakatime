@@ -16,7 +16,7 @@ Features
 Installation
 ------------
 
-1. Download [komodo-wakatime-v1.0.3.xpi](https://s3-us-west-1.amazonaws.com/wakatime/komodo-wakatime-v1.0.3.xpi)
+1. Download [komodo-wakatime-v1.0.6.xpi](https://s3-us-west-1.amazonaws.com/wakatime/komodo-wakatime-v1.0.6.xpi)
 2. In Komodo navigate to: `Tools` -> `Add Ons`.
 3. Choose `Install Add-on From File...` and select the xpi file you just downloaded.
 4. Restart Komodo.
