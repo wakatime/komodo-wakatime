@@ -16,9 +16,9 @@ import sys
 from .compat import u, open
 
 if sys.version_info[0] == 2:
-    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'packages', 'pygments2'))
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'packages', 'pygments_py2'))
 else:
-    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'packages', 'pygments3'))
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'packages', 'pygments_py3'))
 from pygments.lexers import guess_lexer_for_filename
 
 
@@ -89,8 +89,10 @@ def number_lines_in_file(file_name):
 
 
 def get_file_stats(file_name):
+    dependencies = []
     stats = {
         'language': guess_language(file_name),
+        'dependencies': dependencies,
         'lines': number_lines_in_file(file_name),
     }
     return stats

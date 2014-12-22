@@ -13,7 +13,7 @@
 from __future__ import print_function
 
 __title__ = 'wakatime'
-__version__ = '2.1.6'
+__version__ = '2.1.11'
 __author__ = 'Alan Hamlett'
 __license__ = 'BSD'
 __copyright__ = 'Copyright 2014 Alan Hamlett'
@@ -122,7 +122,7 @@ def parseConfigFile(configFile):
                 print(traceback.format_exc())
                 return None
     except IOError:
-        print(u('Error: Could not read from config file {0}').format(configFile))
+        print(u('Error: Could not read from config file {0}').format(u(configFile)))
     return configs
 
 
@@ -142,14 +142,14 @@ def parseArguments(argv):
             description='Common interface for the WakaTime api.')
     parser.add_argument('--file', dest='targetFile', metavar='file',
             action=FileAction, required=True,
-            help='absolute path to file for current action')
+            help='absolute path to file for current heartbeat')
     parser.add_argument('--time', dest='timestamp', metavar='time',
             type=float,
             help='optional floating-point unix epoch timestamp; '+
                 'uses current time by default')
     parser.add_argument('--write', dest='isWrite',
             action='store_true',
-            help='note action was triggered from writing to a file')
+            help='note heartbeat was triggered from writing to a file')
     parser.add_argument('--plugin', dest='plugin',
             help='optional text editor plugin name and version '+
                 'for User-Agent header')
@@ -227,8 +227,8 @@ def should_ignore(fileName, patterns):
                     return pattern
             except re.error as ex:
                 log.warning(u('Regex error ({msg}) for ignore pattern: {pattern}').format(
-                    msg=str(ex),
-                    pattern=pattern,
+                    msg=u(ex),
+                    pattern=u(pattern),
                 ))
     except TypeError:
         pass
@@ -239,19 +239,19 @@ def get_user_agent(plugin):
     ver = sys.version_info
     python_version = '%d.%d.%d.%s.%d' % (ver[0], ver[1], ver[2], ver[3], ver[4])
     user_agent = u('wakatime/{ver} ({platform}) Python{py_ver}').format(
-        ver=__version__,
-        platform=platform.platform(),
+        ver=u(__version__),
+        platform=u(platform.platform()),
         py_ver=python_version,
     )
     if plugin:
         user_agent = u('{user_agent} {plugin}').format(
             user_agent=user_agent,
-            plugin=plugin,
+            plugin=u(plugin),
         )
     return user_agent
 
 
-def send_action(project=None, branch=None, stats=None, key=None, targetFile=None,
+def send_action(project=None, branch=None, stats={}, key=None, targetFile=None,
         timestamp=None, isWrite=None, plugin=None, offline=None,
         hidefilenames=None, **kwargs):
     url = 'https://wakatime.com/api/v1/actions'
@@ -263,13 +263,15 @@ def send_action(project=None, branch=None, stats=None, key=None, targetFile=None
     if hidefilenames and targetFile is not None:
         data['file'] = data['file'].rsplit('/', 1)[-1].rsplit('\\', 1)[-1]
         if len(data['file'].strip('.').split('.', 1)) > 1:
-            data['file'] = u('HIDDEN.{ext}').format(ext=data['file'].strip('.').rsplit('.', 1)[-1])
+            data['file'] = u('HIDDEN.{ext}').format(ext=u(data['file'].strip('.').rsplit('.', 1)[-1]))
         else:
             data['file'] = u('HIDDEN')
     if stats.get('lines'):
         data['lines'] = stats['lines']
     if stats.get('language'):
         data['language'] = stats['language']
+    if stats.get('dependencies'):
+        data['dependencies'] = stats['dependencies']
     if isWrite:
         data['is_write'] = isWrite
     if project:
@@ -285,6 +287,10 @@ def send_action(project=None, branch=None, stats=None, key=None, targetFile=None
     request.add_header('Content-Type', 'application/json')
     auth = u('Basic {key}').format(key=u(base64.b64encode(str.encode(key) if is_py3 else key)))
     request.add_header('Authorization', auth)
+
+    ALWAYS_LOG_CODES = [
+        401,
+    ]
 
     # add Olson timezone to request
     try:
@@ -306,10 +312,15 @@ def send_action(project=None, branch=None, stats=None, key=None, targetFile=None
         if log.isEnabledFor(logging.DEBUG):
             exception_data['traceback'] = traceback.format_exc()
         if offline:
-            queue = Queue()
-            queue.push(data, plugin)
+            if response is None or response.getcode() != 400:
+                queue = Queue()
+                queue.push(data, json.dumps(stats), plugin)
             if log.isEnabledFor(logging.DEBUG):
                 log.warn(exception_data)
+            if response is not None and response.getcode() in ALWAYS_LOG_CODES:
+                log.error({
+                    'response_code': response.getcode(),
+                })
         else:
             log.error(exception_data)
     except:
@@ -319,37 +330,45 @@ def send_action(project=None, branch=None, stats=None, key=None, targetFile=None
         if log.isEnabledFor(logging.DEBUG):
             exception_data['traceback'] = traceback.format_exc()
         if offline:
-            queue = Queue()
-            queue.push(data, plugin)
+            if response is None or response.getcode() != 400:
+                queue = Queue()
+                queue.push(data, json.dumps(stats), plugin)
             if 'unknown url type: https' in u(sys.exc_info()[1]):
                 log.error(exception_data)
             elif log.isEnabledFor(logging.DEBUG):
                 log.warn(exception_data)
+            if response is not None and response.getcode() in ALWAYS_LOG_CODES:
+                log.error({
+                    'response_code': response.getcode(),
+                })
         else:
             log.error(exception_data)
     else:
-        if response.getcode() == 201:
+        if response is not None and response.getcode() == 201:
             log.debug({
                 'response_code': response.getcode(),
             })
             return True
+        response_code = response.getcode() if response is not None else None
+        response_content = response.read() if response is not None else None
         if offline:
-            queue = Queue()
-            queue.push(data, plugin)
+            if response is None or response.getcode() != 400:
+                queue = Queue()
+                queue.push(data, json.dumps(stats), plugin)
             if log.isEnabledFor(logging.DEBUG):
                 log.warn({
-                    'response_code': response.getcode(),
-                    'response_content': response.read(),
+                    'response_code': response_code,
+                    'response_content': response_content,
                 })
             else:
                 log.error({
-                    'response_code': response.getcode(),
-                    'response_content': response.read(),
+                    'response_code': response_code,
+                    'response_content': response_content,
                 })
         else:
             log.error({
-                'response_code': response.getcode(),
-                'response_content': response.read(),
+                'response_code': response_code,
+                'response_content': response_content,
             })
     return False
 
@@ -367,7 +386,7 @@ def main(argv=None):
     ignore = should_ignore(args.targetFile, args.ignore)
     if ignore is not False:
         log.debug(u('File ignored because matches pattern: {pattern}').format(
-            pattern=ignore,
+            pattern=u(ignore),
         ))
         return 0
 
@@ -390,16 +409,17 @@ def main(argv=None):
             ):
             queue = Queue()
             while True:
-                action = queue.pop()
-                if action is None:
+                heartbeat = queue.pop()
+                if heartbeat is None:
                     break
-                sent = send_action(project=action['project'],
-                                   targetFile=action['file'],
-                                   timestamp=action['time'],
-                                   branch=action['branch'],
-                                   stats={'language': action['language'], 'lines': action['lines']},
-                                   key=args.key, isWrite=action['is_write'],
-                                   plugin=action['plugin'],
+                sent = send_action(project=heartbeat['project'],
+                                   targetFile=heartbeat['file'],
+                                   timestamp=heartbeat['time'],
+                                   branch=heartbeat['branch'],
+                                   stats=json.loads(heartbeat['stats']),
+                                   key=args.key,
+                                   isWrite=heartbeat['is_write'],
+                                   plugin=heartbeat['plugin'],
                                    offline=args.offline,
                                    hidefilenames=args.hidefilenames)
                 if not sent:
@@ -409,5 +429,5 @@ def main(argv=None):
         return 102 # api error
 
     else:
-        log.debug('File does not exist; ignoring this action.')
+        log.debug('File does not exist; ignoring this heartbeat.')
         return 0

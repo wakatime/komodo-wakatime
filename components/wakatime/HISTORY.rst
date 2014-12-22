@@ -3,6 +3,38 @@ History
 -------
 
 
+2.1.11 (2014-12-22)
++++++++++++++++++++
+
+- fix offline logging when response from api is None
+
+
+2.1.10 (2014-12-15)
++++++++++++++++++++
+
+- prevent queuing offline heartbeats which will never be valid (400 errors)
+
+
+2.1.9 (2014-12-05)
+++++++++++++++++++
+
+- fix bug preventing offline heartbeats from being purged after uploaded
+
+
+2.1.8 (2014-12-04)
+++++++++++++++++++
+
+- fix UnicodeDecodeError when building user agent string
+- handle case where response is None
+
+
+2.1.7 (2014-11-30)
+++++++++++++++++++
+
+- upgrade pygments to v2.0.1
+- always log an error when api key is incorrect
+
+
 2.1.6 (2014-11-18)
 ++++++++++++++++++
 
