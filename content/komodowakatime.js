@@ -1,6 +1,6 @@
 var komodoWakatime = {
 
-    VERSION: '1.0.6',
+    VERSION: '1.0.7',
 
     action_frequency: 2,
     time: 0,
