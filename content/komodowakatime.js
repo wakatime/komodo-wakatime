@@ -74,8 +74,10 @@ var komodoWakatime = {
         thisObject.keyPressListener = function (event) {
             thisObject.keyPressEvent(thisObject, event);
         };
-        thisObject.view = ko.views.manager.currentView;
-        thisObject.view.addEventListener('keypress', thisObject.keyPressListener, true);
+        if (ko.views.manager.currentView !== null) {
+            thisObject.view = ko.views.manager.currentView;
+            thisObject.view.addEventListener('keypress', thisObject.keyPressListener, true);
+        }
     },
     fileChanged: function (thisObject, event) {
         thisObject.fileName = event.originalTarget.koDoc.file.displayPath;
