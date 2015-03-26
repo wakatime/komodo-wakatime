@@ -31,7 +31,7 @@ var komodoWakatime = {
           .get("PrefD", Components.interfaces.nsILocalFile)
           .path;
         var plugin_dir = currProfPath + '/extensions/wakatime@wakatime.com';
-        return plugin_dir + '/components/wakatime/wakatime-cli.py';
+        return plugin_dir + '/components/wakatime/cli.py';
     },
     promptForAPIKey: function () {
         return ko.dialogs.prompt("[WakaTime] Enter your wakatime.com api key:");
