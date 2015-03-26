@@ -3,6 +3,20 @@ History
 -------
 
 
+2.0.1 (2015-03-26)
+++++++++++++++++++
+
+- support for Komodo 9
+- upgrade external wakatime package to v4.0.4
+- new options for excluding and including directories
+- use requests library instead of urllib2, so api SSL cert is verified
+- new proxy config file item for https proxy support
+- detect frameworks from JavaScript and JSON files
+- detect JavaScript frameworks from script tags in Html template files
+- remove unused dependency, which is missing in some python environments
+- ignore errors from malformed markup (too many closing tags)
+
+
 2.0.0 (2014-12-23)
 ++++++++++++++++++
 
