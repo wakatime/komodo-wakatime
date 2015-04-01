@@ -5,7 +5,7 @@
     <em:id>wakatime@wakatime.com</em:id>
     <em:unpack>true</em:unpack>
     <em:name>WakaTime</em:name>
-    <em:version>2.0.2</em:version>
+    <em:version>2.0.3</em:version>
     <em:description>Automatic analytics for programmers</em:description>
     <em:creator>Alan Hamlett</em:creator>
     <em:contributor>Marcellus Pelcher</em:contributor>
