@@ -75,7 +75,11 @@ var komodoWakatime = {
             thisObject.view.removeEventListener('keypress', thisObject.keyPressListener, true);
         }
         if (ko.views.manager.currentView !== null) {
-            thisObject.view = ko.views.manager.currentView;
+            ko.views.manager.currentView.removeEventListener('keypress', thisObject.keyPressListener, true);
+        }
+        thisObject.view = ko.views.manager.currentView;
+        if (thisObject.view !== null) {
+            thisObject.view.removeEventListener('keypress', thisObject.keyPressListener, true);
             thisObject.view.addEventListener('keypress', thisObject.keyPressListener, true);
         }
     },
@@ -84,9 +88,17 @@ var komodoWakatime = {
         thisObject.keyPressListener = function (event) {
             thisObject.keyPressEvent(thisObject, event);
         };
-        ko.views.manager.currentView.removeEventListener('keypress', thisObject.keyPressListener, true);
+        if (thisObject.view !== null) {
+            thisObject.view.removeEventListener('keypress', thisObject.keyPressListener, true);
+        }
+        if (ko.views.manager.currentView !== null) {
+            ko.views.manager.currentView.removeEventListener('keypress', thisObject.keyPressListener, true);
+        }
         thisObject.view = event.originalTarget;
-        thisObject.view.addEventListener('keypress', thisObject.keyPressListener, true);
+        if (thisObject.view !== null) {
+            thisObject.view.removeEventListener('keypress', thisObject.keyPressListener, true);
+            thisObject.view.addEventListener('keypress', thisObject.keyPressListener, true);
+        }
     }
 };
 
