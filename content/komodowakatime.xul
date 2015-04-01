@@ -3,10 +3,19 @@
 <!DOCTYPE overlay SYSTEM "chrome://komodowakatime/locale/komodowakatime.dtd" >
 
 <overlay id="komodowakatime"
-         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
   <script type="application/x-javascript"
           src="chrome://komodowakatime/content/komodowakatime.js" />
+
+  <menubar id="menubar_main">
+        <menu id="wakatime" label="WakaTime" insertafter="helpMenu">
+            <menupopup>
+                <menuitem id="wakatime-apikey" label="API Key" oncommand="window.WakaTime.saveApiKey(window.WakaTime.promptApiKey());" class="menuitem-iconic"/>
+            </menupopup>
+        </menu>
+
+    </menubar>
 
 </overlay>
 
