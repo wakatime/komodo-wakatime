@@ -14,13 +14,13 @@ var komodoWakatime = {
           .getService(Components.interfaces.koIPrefService)
           .prefs;
         var pref_name = 'wakatime_api_key';
-        komodoWakatime.initViewListener(komodoWakatime);
         if (!prefs.hasStringPref(pref_name) || prefs.getStringPref(pref_name) === '') {
             thisObject.api_key = thisObject.promptForAPIKey();
             prefs.setStringPref('wakatime_api_key', thisObject.api_key);
         } else {
             thisObject.api_key = prefs.getStringPref(pref_name);
         }
+        komodoWakatime.initViewListener(komodoWakatime);
     },
     log: function(msg) {
         ko.logging.getLogger('').warn(msg);
@@ -68,12 +68,12 @@ var komodoWakatime = {
         thisObject.sendDataToAPI(thisObject, true);
     },
     initViewListener: function (thisObject) {
-        if (thisObject.view !== null) {
-            thisObject.view.removeEventListener('keypress', thisObject.keyPressListener, true);
-        }
         thisObject.keyPressListener = function (event) {
             thisObject.keyPressEvent(thisObject, event);
         };
+        if (thisObject.view !== null) {
+            thisObject.view.removeEventListener('keypress', thisObject.keyPressListener, true);
+        }
         if (ko.views.manager.currentView !== null) {
             thisObject.view = ko.views.manager.currentView;
             thisObject.view.addEventListener('keypress', thisObject.keyPressListener, true);
@@ -81,10 +81,10 @@ var komodoWakatime = {
     },
     fileChanged: function (thisObject, event) {
         thisObject.fileName = event.originalTarget.koDoc.file.displayPath;
-        ko.views.manager.currentView.removeEventListener('keypress', thisObject.keyPressListener, true);
         thisObject.keyPressListener = function (event) {
             thisObject.keyPressEvent(thisObject, event);
         };
+        ko.views.manager.currentView.removeEventListener('keypress', thisObject.keyPressListener, true);
         thisObject.view = event.originalTarget;
         thisObject.view.addEventListener('keypress', thisObject.keyPressListener, true);
     }
