@@ -3,6 +3,12 @@ History
 -------
 
 
+2.0.4 (2015-04-01)
+++++++++++++++++++
+
+- only unbind previous event listener when view is not null
+
+
 2.0.3 (2015-04-01)
 ++++++++++++++++++
 
