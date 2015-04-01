@@ -3,6 +3,13 @@ History
 -------
 
 
+3.0.0 (2015-04-01)
+++++++++++++++++++
+
+- fix keypress listener
+- add WakaTime menu item to change api key
+
+
 2.0.4 (2015-04-01)
 ++++++++++++++++++
 
