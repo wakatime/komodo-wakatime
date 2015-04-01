@@ -3,6 +3,13 @@ History
 -------
 
 
+2.0.2 (2015-04-01)
+++++++++++++++++++
+
+- fix prompt for API key
+- upgrade external wakatime package to v4.0.6
+
+
 2.0.1 (2015-03-26)
 ++++++++++++++++++
 
