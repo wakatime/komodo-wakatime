@@ -3,6 +3,14 @@ History
 -------
 
 
+3.0.1 (2015-04-05)
+++++++++++++++++++
+
+- refactor extension and fix bugs
+- detect python binary from common locations for Windows
+- alert if python not found
+
+
 3.0.0 (2015-04-01)
 ++++++++++++++++++
 
