@@ -3,115 +3,217 @@ var komodoWakatime = {
     VERSION: '3.0.0',
 
     heartbeatFrequency: 2,
+    prefName: 'wakatime_api_key',
+
     lastHeartbeatTime: 0,
     lastHeartbeatFile: null,
-    currentView: null,
-    currentFile: null,
-    keyPressListener: null,
-    apiKey: null,
-    prefName: 'wakatime_api_key',
     prefs: Components.classes['@activestate.com/koPrefService;1'].getService(Components.interfaces.koIPrefService).prefs,
 
-    onLoad: function (thisObject) {
-        window.WakaTime = thisObject;
-        thisObject.getApiKey();
-        if (!thisObject.apiKey) thisObject.saveApiKey(thisObject.promptApiKey());
-        thisObject.initViewListener(thisObject);
+    onLoad: function() {
+        window.WakaTime = this;
+        if (!this.getPythonBinary()) {
+            ko.dialogs.alert('Unable to find Python binary. Please install Python or add Python to your PATH if already installed, then restart Komodo.', null, 'WakaTime Error');
+        } else {
+            if (!this.getApiKey()) this.saveApiKey(this.promptApiKey());
+            this.setupListeners();
+        }
     },
-    log: function(msg) {
+    error: function(msg) {
+        ko.logging.getLogger('WakaTime').error(msg);
+    },
+    warn: function(msg, level) {
         ko.logging.getLogger('WakaTime').warn(msg);
     },
-    apiClientLocation: function () {
+    getPythonBinary: function() {
+        if (this._pythonLocation) return this._pythonLocation;
+        var locations = [
+            "pythonw",
+            "python",
+            "/usr/local/bin/python",
+            "/usr/bin/python",
+            "\\python37\\pythonw",
+            "\\Python37\\pythonw",
+            "\\python36\\pythonw",
+            "\\Python36\\pythonw",
+            "\\python35\\pythonw",
+            "\\Python35\\pythonw",
+            "\\python34\\pythonw",
+            "\\Python34\\pythonw",
+            "\\python33\\pythonw",
+            "\\Python33\\pythonw",
+            "\\python32\\pythonw",
+            "\\Python32\\pythonw",
+            "\\python31\\pythonw",
+            "\\Python31\\pythonw",
+            "\\python30\\pythonw",
+            "\\Python30\\pythonw",
+            "\\python27\\pythonw",
+            "\\Python27\\pythonw",
+            "\\python26\\pythonw",
+            "\\Python26\\pythonw",
+            "\\python37\\python",
+            "\\Python37\\python",
+            "\\python36\\python",
+            "\\Python36\\python",
+            "\\python35\\python",
+            "\\Python35\\python",
+            "\\python34\\python",
+            "\\Python34\\python",
+            "\\python33\\python",
+            "\\Python33\\python",
+            "\\python32\\python",
+            "\\Python32\\python",
+            "\\python31\\python",
+            "\\Python31\\python",
+            "\\python30\\python",
+            "\\Python30\\python",
+            "\\python27\\python",
+            "\\Python27\\python",
+            "\\python26\\python",
+            "\\Python26\\python",
+        ];
+        for (var i=0; i<locations.length; i++) {
+            var cmd = [this.escapePath(locations[i]), '--version'];
+            var stdout = {};
+            var stderr = {};
+            var context = this;
+            var process = Components.classes["@activestate.com/koRunService;1"].getService(Components.interfaces.koIRunService);
+            var result = process.RunAndCaptureOutput(cmd.join(' '), '', '', '', stdout, stderr);
+            if (result == 0) {
+                this._pythonLocation = locations[i];
+                return this._pythonLocation;
+            }
+        }
+        return undefined;
+    },
+    getWakaTimeCLI: function() {
+        if (this._wakatimeCLI) return this._wakatimeCLI;
         var currProfPath = Components.classes["@mozilla.org/file/directory_service;1"]
           .getService(Components.interfaces.nsIProperties)
           .get("PrefD", Components.interfaces.nsILocalFile)
           .path;
         var plugin_dir = currProfPath + '/extensions/wakatime@wakatime.com';
-        return plugin_dir + '/components/wakatime/cli.py';
+        var cli = plugin_dir + '/components/wakatime/cli.py';
+        this._wakatimeCLI = cli;
+        return cli;
     },
-    getApiKey: function () {
-        if (this.apiKey) return this.apiKey;
-        if (this.prefs.hasStringPref(this.prefName)) this.apiKey = this.prefs.getStringPref(this.prefName);
-        return this.apiKey;
+    getApiKey: function() {
+        if (this._apiKey) return this._apiKey;
+        if (this.prefs.hasStringPref(this.prefName)) this._apiKey = this.prefs.getStringPref(this.prefName);
+        return this._apiKey;
     },
-    saveApiKey: function (key) {
+    saveApiKey: function(key) {
         if (key) {
-            this.apiKey = key;
-            this.prefs.setStringPref(this.prefName, this.apiKey);
+            this._apiKey = key;
+            this.prefs.setStringPref(this.prefName, this._apiKey);
         }
     },
-    promptApiKey: function () {
+    promptApiKey: function() {
         return ko.dialogs.prompt("Enter your wakatime.com api key:", 'WakaTime API Key', this.getApiKey());
     },
-    getFileName: function (thisObject) {
-        return thisObject.currentFile;
+    getCurrentFile: function() {
+        var currentView = ko.views.manager.currentView;
+        if (currentView) {
+            return currentView.koDoc.displayPath;
+        }
+        return undefined;
     },
-    enoughTimePassed: function (thisObject) {
+    enoughTimePassed: function() {
         var d = new Date();
-        if ((d.getTime() - thisObject.lastHeartbeatTime) > thisObject.heartbeatFrequency * 60000) {
+        if ((d.getTime() - this.lastHeartbeatTime) > this.heartbeatFrequency * 60000) {
             return true;
         }
         return false;
     },
-    fileHasChanged: function (thisObject) {
-        if (thisObject.currentFile !== thisObject.lastHeartbeatFile) {
+    hasFileChanged: function(currentFile) {
+        if (currentFile && currentFile !== this.lastHeartbeatFile) {
             return true;
         }
         return false;
     },
-    watchView: function (thisObject, view) {
-        if (view !== null) {
-            if (thisObject.currentView !== null && thisObject.keyPressListener !== null) {
-                thisObject.currentView.removeEventListener('keypress', thisObject.keyPressListener, true);
-            }
-            thisObject.keyPressListener = function (event) {
-                thisObject.keyPressEvent(thisObject, event);
-            };
-            thisObject.currentView = view;
-            thisObject.currentView.addEventListener('keypress', thisObject.keyPressListener, true);
-        }
+    escapePath: function(arg) {
+        return '"' + arg.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + '"';
     },
-    sendDataToApi: function (thisObject, writeFlag) {
-        writeFlag = typeof writeFlag !== 'undefined' ? writeFlag : false;
-        var cmdWriteFlag = writeFlag ? '--write' : '';
-        var fileName = thisObject.getFileName(thisObject);
-        var cmd = 'python ' +
-          thisObject.apiClientLocation().replace(/(@)/g, "\\@").replace(/(\s)/g, "\\ ") +
-          ' ' + cmdWriteFlag + ' --file ' + fileName + ' --plugin komodo-wakatime/'+ thisObject.VERSION +
-          ' --key ' + thisObject.getApiKey();
-        var runSvc = Components.classes["@activestate.com/koRunService;1"]
-          .createInstance(Components.interfaces.koIRunService);
-        var process = runSvc.RunAndNotify(cmd, '', '', '');
+    sendHeartbeat: function(currentFile, isWrite) {
+        this.escapePath(this.getPythonBinary());
+        this.escapePath(this.getWakaTimeCLI());
+        this.escapePath(currentFile);
+        this.escapePath('komodo-wakatime/' + this.VERSION);
+        this.escapePath(this.getApiKey());
+        var cmd = [
+            this.escapePath(this.getPythonBinary()),
+            this.escapePath(this.getWakaTimeCLI()),
+            '--file',
+            this.escapePath(currentFile),
+            '--plugin',
+            this.escapePath('komodo-wakatime/' + this.VERSION),
+            '--key',
+            this.escapePath(this.getApiKey()),
+        ];
+        if (isWrite) cmd.push('--write');
 
-        thisObject.lastHeartbeatFile = fileName;
+        var context = this;
+        var process = Components.classes["@activestate.com/koRunService;1"].getService(Components.interfaces.koIRunService);
+        var result = process.RunAsync(cmd.join(' '), function() { context.sent.apply(context, arguments); }, '', '', '');
+
+        this.lastHeartbeatFile = currentFile;
         var d = new Date();
-        thisObject.lastHeartbeatTime = d.getTime();
+        this.lastHeartbeatTime = d.getTime();
     },
-    initViewListener: function (thisObject) {
-        var view = ko.views.manager.currentView || thisObject.currentView;
-        thisObject.watchView(thisObject, view);
-    },
-    keyPressEvent: function (thisObject) {
-        if (thisObject.enoughTimePassed(thisObject) || thisObject.fileHasChanged(thisObject)) {
-            thisObject.sendDataToApi(thisObject);
+    sent: function(cmd, code, stdout, stderr) {
+        if (code !== 0) {
+            if (code !== 102 && code !== 103 && !this._errorShown) {
+                ko.dialogs.alert('Exit Status: ' + code, stdout + stderr, 'WakaTime Error');
+                this._errorShown = true;
+            }
+            this.warn(cmd);
+            this.warn('Process exit code nonzero: ' + code);
+            if (stdout) this.warn(stdout);
+            if (stderr) this.warn(stderr);
         }
     },
-    fileSavedEvent: function (thisObject) {
-        thisObject.sendDataToApi(thisObject, true);
+    setupListeners: function() {
+        var context = this;
+        window.addEventListener('file_saved', function(event) {
+            context.fileSavedEvent.apply(context, [event]);
+        }, false);
+        window.addEventListener('current_view_changed', function(event) {
+            context.fileChangedEvent.apply(context, [event]);
+        }, true);
+        var view = ko.views.manager.currentView || this._currentView;
+        this.watchView(view);
     },
-    fileChangedEvent: function (thisObject, event) {
-        thisObject.currentFile = event.originalTarget.koDoc.file.displayPath;
-        var view = event.originalTarget || ko.views.manager.currentView || thisObject.currentView;
-        thisObject.watchView(thisObject, view);
+    watchView: function(view) {
+        if (view !== null) {
+            var context = this;
+            if (this._currentView !== null && this._keyPressListener !== undefined) {
+                this._currentView.removeEventListener('keypress', this._keyPressListener, true);
+            }
+            this._keyPressListener = function(event) {
+                context.keyPressEvent(event);
+            };
+            this._currentView = view;
+            this._currentView.addEventListener('keypress', this._keyPressListener, true);
+        }
+    },
+    keyPressEvent: function() {
+        var currentFile = this.getCurrentFile();
+        if (currentFile && (this.enoughTimePassed() || this.hasFileChanged(currentFile))) {
+            this.sendHeartbeat(currentFile);
+        }
+    },
+    fileSavedEvent: function() {
+        var currentFile = this.getCurrentFile();
+        if (currentFile) {
+            this.sendHeartbeat(currentFile, true);
+        }
+    },
+    fileChangedEvent: function(event) {
+        var view = event.originalTarget || ko.views.manager.currentView || this._currentView;
+        this.watchView(view);
     },
 };
 
-window.addEventListener('file_saved', function (event) {
-    komodoWakatime.fileSavedEvent(komodoWakatime, event);
-}, false);
-window.addEventListener('current_view_changed', function (event) {
-    komodoWakatime.fileChangedEvent(komodoWakatime, event);
-}, true);
-window.addEventListener('komodo-ui-started', function (event) {
-    komodoWakatime.onLoad(komodoWakatime, event);
+window.addEventListener('komodo-ui-started', function(event) {
+    komodoWakatime.onLoad.apply(komodoWakatime, [event]);
 }, true);
