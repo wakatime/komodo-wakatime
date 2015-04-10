@@ -20,7 +20,7 @@ Installation
 2. In Komodo navigate to: `Tools` -> `Add Ons`.
 3. Choose `Install Add-on From File...` and select the xpi file you just downloaded.
 4. Restart Komodo.
-5. Enter your [api key](https://wakatime.com/settings#apikey) from https://wakatime.com/settings#apikey when prompted.
+5. Enter your [api key](https://wakatime.com/settings#apikey) when prompted.
 6. Use Komodo and your time will be tracked for you automatically.
 7. Visit https://wakatime.com to see your logged time.
 
