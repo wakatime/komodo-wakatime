@@ -26,18 +26,17 @@ except ImportError:
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'packages'))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'packages', 'requests', 'packages'))
 
 from .__about__ import __version__
 from .compat import u, open, is_py3
-from .offlinequeue import Queue
 from .logger import setup_logging
-from .project import find_project
-from .stats import get_file_stats
+from .offlinequeue import Queue
 from .packages import argparse
 from .packages import simplejson as json
-from .packages import requests
 from .packages.requests.exceptions import RequestException
+from .project import find_project
+from .session_cache import SessionCache
+from .stats import get_file_stats
 try:
     from .packages import tzlocal
 except:
@@ -148,6 +147,10 @@ def parseArguments(argv):
             type=float,
             help='optional floating-point unix epoch timestamp; '+
                  'uses current time by default')
+    parser.add_argument('--lineno', dest='lineno',
+            help='optional line number; current line being edited')
+    parser.add_argument('--cursorpos', dest='cursorpos',
+            help='optional cursor position in the current file')
     parser.add_argument('--notfile', dest='notfile', action='store_true',
             help='when set, will accept any value for the file. for example, '+
                  'a domain name or other item you want to log time towards.')
@@ -155,7 +158,7 @@ def parseArguments(argv):
                         help='optional https proxy url; for example: '+
                         'https://user:pass@localhost:8080')
     parser.add_argument('--project', dest='project_name',
-            help='optional project name; will auto-discover by default')
+            help='optional project name; auto-discovered project takes priority')
     parser.add_argument('--disableoffline', dest='offline',
             action='store_false',
             help='disables offline time logging instead of queuing logged time')
@@ -173,6 +176,8 @@ def parseArguments(argv):
             help=argparse.SUPPRESS)
     parser.add_argument('--logfile', dest='logfile',
             help='defaults to ~/.wakatime.log')
+    parser.add_argument('--apiurl', dest='api_url',
+            help='heartbeats api url; for debugging with a local server')
     parser.add_argument('--config', dest='config',
             help='defaults to ~/.wakatime.conf')
     parser.add_argument('--verbose', dest='verbose', action='store_true',
@@ -239,6 +244,8 @@ def parseArguments(argv):
         args.verbose = configs.getboolean('settings', 'debug')
     if not args.logfile and configs.has_option('settings', 'logfile'):
         args.logfile = configs.get('settings', 'logfile')
+    if not args.api_url and configs.has_option('settings', 'api_url'):
+        args.api_url = configs.get('settings', 'api_url')
 
     return args, configs
 
@@ -295,10 +302,14 @@ def get_user_agent(plugin):
 
 
 def send_heartbeat(project=None, branch=None, stats={}, key=None, targetFile=None,
-        timestamp=None, isWrite=None, plugin=None, offline=None,
-        hidefilenames=None, notfile=False, proxy=None, **kwargs):
-    url = 'https://wakatime.com/api/v1/heartbeats'
-    log.debug('Sending heartbeat to api at %s' % url)
+        timestamp=None, isWrite=None, plugin=None, offline=None, notfile=False,
+        hidefilenames=None, proxy=None, api_url=None, **kwargs):
+    """Sends heartbeat as POST request to WakaTime api server.
+    """
+
+    if not api_url:
+        api_url = 'https://wakatime.com/api/v1/heartbeats'
+    log.debug('Sending heartbeat to api at %s' % api_url)
     data = {
         'time': timestamp,
         'file': targetFile,
@@ -315,6 +326,10 @@ def send_heartbeat(project=None, branch=None, stats={}, key=None, targetFile=Non
         data['language'] = stats['language']
     if stats.get('dependencies'):
         data['dependencies'] = stats['dependencies']
+    if stats.get('lineno'):
+        data['lineno'] = stats['lineno']
+    if stats.get('cursorpos'):
+        data['cursorpos'] = stats['cursorpos']
     if isWrite:
         data['is_write'] = isWrite
     if project:
@@ -345,10 +360,13 @@ def send_heartbeat(project=None, branch=None, stats={}, key=None, targetFile=Non
     if tz:
         headers['TimeZone'] = u(tz.zone)
 
+    session_cache = SessionCache()
+    session = session_cache.get()
+
     # log time to api
     response = None
     try:
-        response = requests.post(url, data=request_body, headers=headers,
+        response = session.post(api_url, data=request_body, headers=headers,
                                  proxies=proxies)
     except RequestException:
         exception_data = {
@@ -370,6 +388,7 @@ def send_heartbeat(project=None, branch=None, stats={}, key=None, targetFile=Non
             log.debug({
                 'response_code': response_code,
             })
+            session_cache.save(session)
             return True
         if offline:
             if response_code != 400:
@@ -395,6 +414,7 @@ def send_heartbeat(project=None, branch=None, stats={}, key=None, targetFile=Non
                 'response_code': response_code,
                 'response_content': response_content,
             })
+    session_cache.delete()
     return False
 
 
@@ -417,7 +437,8 @@ def main(argv=None):
 
     if os.path.isfile(args.targetFile) or args.notfile:
 
-        stats = get_file_stats(args.targetFile, notfile=args.notfile)
+        stats = get_file_stats(args.targetFile, notfile=args.notfile,
+                               lineno=args.lineno, cursorpos=args.cursorpos)
 
         project = None
         if not args.notfile:
@@ -439,18 +460,21 @@ def main(argv=None):
                 heartbeat = queue.pop()
                 if heartbeat is None:
                     break
-                sent = send_heartbeat(project=heartbeat['project'],
-                                   targetFile=heartbeat['file'],
-                                   timestamp=heartbeat['time'],
-                                   branch=heartbeat['branch'],
-                                   stats=json.loads(heartbeat['stats']),
-                                   key=args.key,
-                                   isWrite=heartbeat['is_write'],
-                                   plugin=heartbeat['plugin'],
-                                   offline=args.offline,
-                                   hidefilenames=args.hidefilenames,
-                                   notfile=args.notfile,
-                                   proxy=args.proxy)
+                sent = send_heartbeat(
+                    project=heartbeat['project'],
+                    targetFile=heartbeat['file'],
+                    timestamp=heartbeat['time'],
+                    branch=heartbeat['branch'],
+                    stats=json.loads(heartbeat['stats']),
+                    key=args.key,
+                    isWrite=heartbeat['is_write'],
+                    plugin=heartbeat['plugin'],
+                    offline=args.offline,
+                    hidefilenames=args.hidefilenames,
+                    notfile=args.notfile,
+                    proxy=args.proxy,
+                    api_url=args.api_url,
+                )
                 if not sent:
                     break
             return 0 # success
