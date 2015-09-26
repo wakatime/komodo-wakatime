@@ -1,9 +1,8 @@
 komodo-wakatime
 ===============
 
-Fully automatic time tracking for Komodo.
+Quantify your coding inside Komodo with http://wakatime.com/.
 
-This is a plugin for the [WakaTime](https://wakatime.com) web application.
 
 Features
 --------
