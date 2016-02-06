@@ -11,6 +11,7 @@
 
 import logging
 import os
+import sys
 
 from .base import BaseProject
 from ..compat import u, open
@@ -29,7 +30,7 @@ class Git(BaseProject):
         base = self._project_base()
         if base:
             return u(os.path.basename(base))
-        return None
+        return None  # pragma: nocover
 
     def branch(self):
         base = self._project_base()
@@ -38,8 +39,14 @@ class Git(BaseProject):
             try:
                 with open(head, 'r', encoding='utf-8') as fh:
                     return u(fh.readline().strip().rsplit('/', 1)[-1])
-            except IOError:
-                pass
+            except UnicodeDecodeError:  # pragma: nocover
+                try:
+                    with open(head, 'r', encoding=sys.getfilesystemencoding()) as fh:
+                        return u(fh.readline().strip().rsplit('/', 1)[-1])
+                except:
+                    log.traceback()
+            except IOError:  # pragma: nocover
+                log.traceback()
         return None
 
     def _project_base(self):

@@ -17,32 +17,49 @@ is_py2 = (sys.version_info[0] == 2)
 is_py3 = (sys.version_info[0] == 3)
 
 
-if is_py2:
+if is_py2:  # pragma: nocover
 
     def u(text):
+        if text is None:
+            return None
         try:
             return text.decode('utf-8')
         except:
             try:
-                return unicode(text)
+                return text.decode(sys.getdefaultencoding())
             except:
-                return text
+                try:
+                    return unicode(text)
+                except:
+                    return text
     open = codecs.open
     basestring = basestring
 
 
-elif is_py3:
+elif is_py3:  # pragma: nocover
 
     def u(text):
+        if text is None:
+            return None
         if isinstance(text, bytes):
-            return text.decode('utf-8')
-        return str(text)
+            try:
+                return text.decode('utf-8')
+            except:
+                try:
+                    return text.decode(sys.getdefaultencoding())
+                except:
+                    pass
+        try:
+            return str(text)
+        except:
+            return text
     open = open
     basestring = (str, bytes)
 
+
 try:
     from importlib import import_module
-except ImportError:
+except ImportError:  # pragma: nocover
     def _resolve_name(name, package, level):
         """Return the absolute name of the module to be imported."""
         if not hasattr(package, 'rindex'):

@@ -14,12 +14,11 @@ import logging
 import os
 import pickle
 import sys
-import traceback
 
 try:
     import sqlite3
     HAS_SQL = True
-except ImportError:
+except ImportError:  # pragma: nocover
     HAS_SQL = False
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'packages'))
@@ -46,19 +45,19 @@ class SessionCache(object):
         """Saves a requests.Session object for the next heartbeat process.
         """
 
-        if not HAS_SQL:
+        if not HAS_SQL:  # pragma: nocover
             return
         try:
             conn, c = self.connect()
             c.execute('DELETE FROM session')
             values = {
-                'value': pickle.dumps(session),
+                'value': sqlite3.Binary(pickle.dumps(session, protocol=2)),
             }
             c.execute('INSERT INTO session VALUES (:value)', values)
             conn.commit()
             conn.close()
-        except:
-            log.error(traceback.format_exc())
+        except:  # pragma: nocover
+            log.traceback()
 
 
     def get(self):
@@ -67,13 +66,13 @@ class SessionCache(object):
         Gets Session from sqlite3 cache or creates a new Session.
         """
 
-        if not HAS_SQL:
+        if not HAS_SQL:  # pragma: nocover
             return requests.session()
 
         try:
             conn, c = self.connect()
         except:
-            log.error(traceback.format_exc())
+            log.traceback()
             return requests.session()
 
         session = None
@@ -83,13 +82,13 @@ class SessionCache(object):
             row = c.fetchone()
             if row is not None:
                 session = pickle.loads(row[0])
-        except:
-            log.error(traceback.format_exc())
+        except:  # pragma: nocover
+            log.traceback()
 
         try:
             conn.close()
-        except:
-            log.error(traceback.format_exc())
+        except:  # pragma: nocover
+            log.traceback()
 
         return session if session is not None else requests.session()
 
@@ -98,7 +97,7 @@ class SessionCache(object):
         """Clears all cached Session objects.
         """
 
-        if not HAS_SQL:
+        if not HAS_SQL:  # pragma: nocover
             return
         try:
             conn, c = self.connect()
@@ -106,4 +105,4 @@ class SessionCache(object):
             conn.commit()
             conn.close()
         except:
-            log.error(traceback.format_exc())
+            log.traceback()

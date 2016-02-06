@@ -11,6 +11,7 @@
 
 import logging
 import os
+import sys
 
 from .base import BaseProject
 from ..compat import u, open
@@ -28,7 +29,7 @@ class Mercurial(BaseProject):
     def name(self):
         if self.configDir:
             return u(os.path.basename(os.path.dirname(self.configDir)))
-        return None
+        return None  # pragma: nocover
 
     def branch(self):
         if self.configDir:
@@ -36,8 +37,14 @@ class Mercurial(BaseProject):
             try:
                 with open(branch_file, 'r', encoding='utf-8') as fh:
                     return u(fh.readline().strip().rsplit('/', 1)[-1])
-            except IOError:
-                pass
+            except UnicodeDecodeError:  # pragma: nocover
+                try:
+                    with open(branch_file, 'r', encoding=sys.getfilesystemencoding()) as fh:
+                        return u(fh.readline().strip().rsplit('/', 1)[-1])
+                except:
+                    log.traceback()
+            except IOError:  # pragma: nocover
+                log.traceback()
         return u('default')
 
     def _find_hg_config_dir(self, path):

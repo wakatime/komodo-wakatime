@@ -9,28 +9,31 @@
     :license: BSD, see LICENSE for more details.
 """
 
-import inspect
 import logging
 import os
-import sys
+import traceback
 
-from .packages import simplejson as json
 from .compat import u
+from .packages.requests.packages import urllib3
 try:
-    from collections import OrderedDict
-except ImportError:
+    from collections import OrderedDict  # pragma: nocover
+except ImportError:  # pragma: nocover
     from .packages.ordereddict import OrderedDict
+try:
+    from .packages import simplejson as json  # pragma: nocover
+except (ImportError, SyntaxError):  # pragma: nocover
+    import json
 
 
 class CustomEncoder(json.JSONEncoder):
 
     def default(self, obj):
-        if isinstance(obj, bytes):
-            obj = bytes.decode(obj)
+        if isinstance(obj, bytes):  # pragma: nocover
+            obj = u(obj)
             return json.dumps(obj)
-        try:
+        try:  # pragma: nocover
             encoded = super(CustomEncoder, self).default(obj)
-        except UnicodeDecodeError:
+        except UnicodeDecodeError:  # pragma: nocover
             obj = u(obj)
             encoded = super(CustomEncoder, self).default(obj)
         return encoded
@@ -38,37 +41,39 @@ class CustomEncoder(json.JSONEncoder):
 
 class JsonFormatter(logging.Formatter):
 
-    def setup(self, timestamp, isWrite, targetFile, version, plugin):
+    def setup(self, timestamp, isWrite, entity, version, plugin, verbose,
+              warnings=False):
         self.timestamp = timestamp
         self.isWrite = isWrite
-        self.targetFile = targetFile
+        self.entity = entity
         self.version = version
         self.plugin = plugin
+        self.verbose = verbose
+        self.warnings = warnings
 
-    def format(self, record):
+    def format(self, record, *args):
         data = OrderedDict([
             ('now', self.formatTime(record, self.datefmt)),
         ])
-        try:
-            data['package'] = inspect.stack()[9][0].f_globals.get('__package__')
-            data['lineno'] = inspect.stack()[9][2]
-        except:
-            pass
         data['version'] = self.version
         data['plugin'] = self.plugin
         data['time'] = self.timestamp
-        data['isWrite'] = self.isWrite
-        data['file'] = self.targetFile
+        if self.verbose:
+            data['caller'] = record.pathname
+            data['lineno'] = record.lineno
+            data['isWrite'] = self.isWrite
+            data['file'] = self.entity
+            if not self.isWrite:
+                del data['isWrite']
         data['level'] = record.levelname
-        data['message'] = record.msg
+        data['message'] = record.getMessage() if self.warnings else record.msg
         if not self.plugin:
             del data['plugin']
-        if not self.isWrite:
-            del data['isWrite']
         return CustomEncoder().encode(data)
 
-    def formatException(self, exc_info):
-        return sys.exec_info[2].format_exc()
+
+def traceback_formatter(*args, **kwargs):
+    logging.getLogger('WakaTime').error(traceback.format_exc())
 
 
 def set_log_level(logger, args):
@@ -79,20 +84,11 @@ def set_log_level(logger, args):
 
 
 def setup_logging(args, version):
-    logging.captureWarnings(True)
+    urllib3.disable_warnings()
     logger = logging.getLogger('WakaTime')
+    for handler in logger.handlers:
+        logger.removeHandler(handler)
     set_log_level(logger, args)
-    if len(logger.handlers) > 0:
-        formatter = JsonFormatter(datefmt='%Y/%m/%d %H:%M:%S %z')
-        formatter.setup(
-            timestamp=args.timestamp,
-            isWrite=args.isWrite,
-            targetFile=args.targetFile,
-            version=version,
-            plugin=args.plugin,
-        )
-        logger.handlers[0].setFormatter(formatter)
-        return logger
     logfile = args.logfile
     if not logfile:
         logfile = '~/.wakatime.log'
@@ -101,11 +97,33 @@ def setup_logging(args, version):
     formatter.setup(
         timestamp=args.timestamp,
         isWrite=args.isWrite,
-        targetFile=args.targetFile,
+        entity=args.entity,
         version=version,
         plugin=args.plugin,
+        verbose=args.verbose,
     )
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    logging.getLogger('py.warnings').addHandler(handler)
+
+    # add custom traceback logging method
+    logger.traceback = traceback_formatter
+
+    warnings_formatter = JsonFormatter(datefmt='%Y/%m/%d %H:%M:%S %z')
+    warnings_formatter.setup(
+        timestamp=args.timestamp,
+        isWrite=args.isWrite,
+        entity=args.entity,
+        version=version,
+        plugin=args.plugin,
+        verbose=args.verbose,
+        warnings=True,
+    )
+    warnings_handler = logging.FileHandler(os.path.expanduser(logfile))
+    warnings_handler.setFormatter(warnings_formatter)
+    logging.getLogger('py.warnings').addHandler(warnings_handler)
+    try:
+        logging.captureWarnings(True)
+    except AttributeError:  # pragma: nocover
+        pass  # Python >= 2.7 is needed to capture warnings
+
     return logger
