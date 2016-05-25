@@ -3,6 +3,38 @@ History
 -------
 
 
+3.0.2 (2016-05-25)
+++++++++++++++++++
+
+- Add support for Komodo 10.
+- Upgrade wakatime-cli to v6.0.3.
+- Support for SOCKS proxies.
+- Prevent popup on Mac when xcode-tools is not installed.
+- Fix bug which prevented plugin from being sent with extra heartbeats.
+- Increase default network timeout to 60 seconds when sending heartbeats to
+  the api.
+- Support regex patterns in projectmap config section for renaming projects.
+- Upgrade pytz to v2016.3.
+- Upgrade tzlocal to v1.2.2.
+- Upgrade requests package to v2.9.1.
+- Improve C# dependency detection.
+- Log all unknown exceptions to wakatime.log file.
+- Disable urllib3 SSL warning from every request.
+- Detect dependencies from golang files.
+- Use api.wakatime.com for sending heartbeats.
+- Improve dependency detection.
+- Send hostname in X-Machine-Name header.
+- Upgrade argparse to v1.3.0.
+- Move language translations to api server.
+- Move extension rules to api server.
+- Detect correct header file language based on presence of .cpp or .c files
+  named the same as the .h file.
+- Reuse SSL connection across multiple processes for improved performance.
+- Added api_url config option and --apiurl cli argument for customizing api
+  url.
+- Capture warnings in log file.
+
+
 3.0.1 (2015-04-05)
 ++++++++++++++++++
 
