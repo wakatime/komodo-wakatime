@@ -27,51 +27,15 @@ var komodoWakatime = {
     getPythonBinary: function() {
         if (this._pythonLocation) return this._pythonLocation;
         var locations = [
-            "pythonw",
-            "python",
-            "/usr/local/bin/python",
-            "/usr/bin/python",
-            "\\python37\\pythonw",
-            "\\Python37\\pythonw",
-            "\\python36\\pythonw",
-            "\\Python36\\pythonw",
-            "\\python35\\pythonw",
-            "\\Python35\\pythonw",
-            "\\python34\\pythonw",
-            "\\Python34\\pythonw",
-            "\\python33\\pythonw",
-            "\\Python33\\pythonw",
-            "\\python32\\pythonw",
-            "\\Python32\\pythonw",
-            "\\python31\\pythonw",
-            "\\Python31\\pythonw",
-            "\\python30\\pythonw",
-            "\\Python30\\pythonw",
-            "\\python27\\pythonw",
-            "\\Python27\\pythonw",
-            "\\python26\\pythonw",
-            "\\Python26\\pythonw",
-            "\\python37\\python",
-            "\\Python37\\python",
-            "\\python36\\python",
-            "\\Python36\\python",
-            "\\python35\\python",
-            "\\Python35\\python",
-            "\\python34\\python",
-            "\\Python34\\python",
-            "\\python33\\python",
-            "\\Python33\\python",
-            "\\python32\\python",
-            "\\Python32\\python",
-            "\\python31\\python",
-            "\\Python31\\python",
-            "\\python30\\python",
-            "\\Python30\\python",
-            "\\python27\\python",
-            "\\Python27\\python",
-            "\\python26\\python",
-            "\\Python26\\python",
+          'pythonw',
+          'python',
+          '/usr/local/bin/python',
+          '/usr/bin/python',
         ];
+        for (var i=26; i<40; i++) {
+          locations.push(path.join('python' + i, 'pythonw'));
+          locations.push(path.join('Python' + i, 'pythonw'));
+        }
         for (var i=0; i<locations.length; i++) {
             var cmd = [this.escapePath(locations[i]), '--version'];
             var stdout = {};
