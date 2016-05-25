@@ -15,10 +15,9 @@ Features
 Installation
 ------------
 
-1. Download [komodo-wakatime-v3.0.1.xpi](https://github.com/wakatime/komodo-wakatime/releases/download/3.0.1/komodo-wakatime-v3.0.1.xpi)
-2. In Komodo navigate to: `Tools` -> `Add Ons`.
-3. Choose `Install Add-on From File...` and select the xpi file you just downloaded.
-4. Restart Komodo.
+1. Inside Komodo, navigate to `Tools` -> `Add-ons`.
+2. Press the left arrow key to go up one level.
+3. Search for `WakaTime` and press `Enter` to install.
 5. Enter your [api key](https://wakatime.com/settings#apikey) when prompted.
 6. Use Komodo and your time will be tracked for you automatically.
 7. Visit https://wakatime.com to see your logged time.
