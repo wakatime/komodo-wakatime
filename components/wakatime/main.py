@@ -25,8 +25,9 @@ try:
 except ImportError:  # pragma: nocover
     import configparser
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'packages'))
+pwd = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.dirname(pwd))
+sys.path.insert(0, os.path.join(pwd, 'packages'))
 
 from .__about__ import __version__
 from .compat import u, open, is_py3
@@ -35,6 +36,8 @@ from .constants import (
     AUTH_ERROR,
     CONFIG_FILE_PARSE_ERROR,
     SUCCESS,
+    UNKNOWN_ERROR,
+    MALFORMED_HEARTBEAT_ERROR,
 )
 from .logger import setup_logging
 from .offlinequeue import Queue
@@ -48,10 +51,7 @@ try:
     from .packages import simplejson as json  # pragma: nocover
 except (ImportError, SyntaxError):  # pragma: nocover
     import json
-try:
-    from .packages import tzlocal
-except:  # pragma: nocover
-    from .packages import tzlocal3 as tzlocal
+from .packages import tzlocal
 
 
 log = logging.getLogger('WakaTime')
@@ -102,13 +102,13 @@ def parseArguments():
     parser.add_argument('--entity', dest='entity', metavar='FILE',
             action=FileAction,
             help='absolute path to file for the heartbeat; can also be a '+
-                 'url, domain, or app when --entitytype is not file')
+                 'url, domain, or app when --entity-type is not file')
     parser.add_argument('--file', dest='file', action=FileAction,
             help=argparse.SUPPRESS)
     parser.add_argument('--key', dest='key',
             help='your wakatime api key; uses api_key from '+
-                '~/.wakatime.conf by default')
-    parser.add_argument('--write', dest='isWrite',
+                '~/.wakatime.cfg by default')
+    parser.add_argument('--write', dest='is_write',
             action='store_true',
             help='when set, tells api this heartbeat was triggered from '+
                  'writing to a file')
@@ -123,17 +123,24 @@ def parseArguments():
             help='optional line number; current line being edited')
     parser.add_argument('--cursorpos', dest='cursorpos',
             help='optional cursor position in the current file')
-    parser.add_argument('--entitytype', dest='entity_type',
+    parser.add_argument('--entity-type', dest='entity_type',
             help='entity type for this heartbeat. can be one of "file", '+
-                 '"url", "domain", or "app"; defaults to file.')
+                 '"domain", or "app"; defaults to file.')
     parser.add_argument('--proxy', dest='proxy',
-                        help='optional https proxy url; for example: '+
-                        'https://user:pass@localhost:8080')
+                        help='optional proxy configuration. Supports HTTPS '+
+                        'and SOCKS proxies. For example: '+
+                        'https://user:pass@host:port or '+
+                        'socks5://user:pass@host:port')
     parser.add_argument('--project', dest='project',
             help='optional project name')
     parser.add_argument('--alternate-project', dest='alternate_project',
-            help='optional alternate project name; auto-discovered project takes priority')
-    parser.add_argument('--hostname', dest='hostname', help='hostname of current machine.')
+            help='optional alternate project name; auto-discovered project '+
+                 'takes priority')
+    parser.add_argument('--alternate-language', dest='alternate_language',
+            help='optional alternate language name; auto-detected language'+
+                 'takes priority')
+    parser.add_argument('--hostname', dest='hostname', help='hostname of '+
+                        'current machine.')
     parser.add_argument('--disableoffline', dest='offline',
             action='store_false',
             help='disables offline time logging instead of queuing logged time')
@@ -149,14 +156,18 @@ def parseArguments():
                  'POSIX regex syntax; can be used more than once')
     parser.add_argument('--ignore', dest='ignore', action='append',
             help=argparse.SUPPRESS)
+    parser.add_argument('--extra-heartbeats', dest='extra_heartbeats',
+            action='store_true',
+            help='reads extra heartbeats from STDIN as a JSON array until EOF')
     parser.add_argument('--logfile', dest='logfile',
             help='defaults to ~/.wakatime.log')
     parser.add_argument('--apiurl', dest='api_url',
             help='heartbeats api url; for debugging with a local server')
     parser.add_argument('--timeout', dest='timeout', type=int,
-            help='number of seconds to wait when sending heartbeats to api')
+            help='number of seconds to wait when sending heartbeats to api; '+
+                 'defaults to 60 seconds')
     parser.add_argument('--config', dest='config',
-            help='defaults to ~/.wakatime.conf')
+            help='defaults to ~/.wakatime.cfg')
     parser.add_argument('--verbose', dest='verbose', action='store_true',
             help='turns on debug messages in log file')
     parser.add_argument('--version', action='version', version=__version__)
@@ -184,8 +195,6 @@ def parseArguments():
             args.key = default_key
         else:
             parser.error('Missing api key')
-    if not args.entity_type:
-        args.entity_type = 'file'
     if not args.entity:
         if args.file:
             args.entity = args.file
@@ -290,9 +299,10 @@ def get_user_agent(plugin):
     return user_agent
 
 
-def send_heartbeat(project=None, branch=None, hostname=None, stats={}, key=None, entity=None,
-        timestamp=None, isWrite=None, plugin=None, offline=None, entity_type='file',
-        hidefilenames=None, proxy=None, api_url=None, timeout=None, **kwargs):
+def send_heartbeat(project=None, branch=None, hostname=None, stats={}, key=None,
+                   entity=None, timestamp=None, is_write=None, plugin=None,
+                   offline=None, entity_type='file', hidefilenames=None,
+                   proxy=None, api_url=None, timeout=None, **kwargs):
     """Sends heartbeat as POST request to WakaTime api server.
 
     Returns `SUCCESS` when heartbeat was sent, otherwise returns an
@@ -302,7 +312,7 @@ def send_heartbeat(project=None, branch=None, hostname=None, stats={}, key=None,
     if not api_url:
         api_url = 'https://api.wakatime.com/api/v1/heartbeats'
     if not timeout:
-        timeout = 30
+        timeout = 60
     log.debug('Sending heartbeat to api at %s' % api_url)
     data = {
         'time': timestamp,
@@ -322,8 +332,8 @@ def send_heartbeat(project=None, branch=None, hostname=None, stats={}, key=None,
         data['lineno'] = stats['lineno']
     if stats.get('cursorpos'):
         data['cursorpos'] = stats['cursorpos']
-    if isWrite:
-        data['is_write'] = isWrite
+    if is_write:
+        data['is_write'] = is_write
     if project:
         data['project'] = project
     if branch:
@@ -341,7 +351,7 @@ def send_heartbeat(project=None, branch=None, hostname=None, stats={}, key=None,
         'Authorization': auth,
     }
     if hostname:
-        headers['X-Machine-Name'] = hostname
+        headers['X-Machine-Name'] = u(hostname).encode('utf-8')
     proxies = {}
     if proxy:
         proxies['https'] = proxy
@@ -352,7 +362,7 @@ def send_heartbeat(project=None, branch=None, hostname=None, stats={}, key=None,
     except:
         tz = None
     if tz:
-        headers['TimeZone'] = u(tz.zone)
+        headers['TimeZone'] = u(tz.zone).encode('utf-8')
 
     session_cache = SessionCache()
     session = session_cache.get()
@@ -361,7 +371,7 @@ def send_heartbeat(project=None, branch=None, hostname=None, stats={}, key=None,
     response = None
     try:
         response = session.post(api_url, data=request_body, headers=headers,
-                                 proxies=proxies, timeout=timeout)
+                                proxies=proxies, timeout=timeout)
     except RequestException:
         exception_data = {
             sys.exc_info()[0].__name__: u(sys.exc_info()[1]),
@@ -376,39 +386,39 @@ def send_heartbeat(project=None, branch=None, hostname=None, stats={}, key=None,
         else:
             log.error(exception_data)
     else:
-        response_code = response.status_code if response is not None else None
-        response_content = response.text if response is not None else None
-        if response_code == requests.codes.created or response_code == requests.codes.accepted:
+        code = response.status_code if response is not None else None
+        content = response.text if response is not None else None
+        if code == requests.codes.created or code == requests.codes.accepted:
             log.debug({
-                'response_code': response_code,
+                'response_code': code,
             })
             session_cache.save(session)
             return SUCCESS
         if offline:
-            if response_code != 400:
+            if code != 400:
                 queue = Queue()
                 queue.push(data, json.dumps(stats), plugin)
-                if response_code == 401:
+                if code == 401:
                     log.error({
-                        'response_code': response_code,
-                        'response_content': response_content,
+                        'response_code': code,
+                        'response_content': content,
                     })
                     session_cache.delete()
                     return AUTH_ERROR
                 elif log.isEnabledFor(logging.DEBUG):
                     log.warn({
-                        'response_code': response_code,
-                        'response_content': response_content,
+                        'response_code': code,
+                        'response_content': content,
                     })
             else:
                 log.error({
-                    'response_code': response_code,
-                    'response_content': response_content,
+                    'response_code': code,
+                    'response_content': content,
                 })
         else:
             log.error({
-                'response_code': response_code,
-                'response_content': response_content,
+                'response_code': code,
+                'response_content': content,
             })
     session_cache.delete()
     return API_ERROR
@@ -430,7 +440,7 @@ def sync_offline_heartbeats(args, hostname):
             hostname=hostname,
             stats=json.loads(heartbeat['stats']),
             key=args.key,
-            isWrite=heartbeat['is_write'],
+            is_write=heartbeat['is_write'],
             plugin=heartbeat['plugin'],
             offline=args.offline,
             hidefilenames=args.hidefilenames,
@@ -446,6 +456,50 @@ def sync_offline_heartbeats(args, hostname):
     return SUCCESS
 
 
+def process_heartbeat(args, configs, hostname, heartbeat):
+    exclude = should_exclude(heartbeat['entity'], args.include, args.exclude)
+    if exclude is not False:
+        log.debug(u('Skipping because matches exclude pattern: {pattern}').format(
+            pattern=u(exclude),
+        ))
+        return SUCCESS
+
+    if heartbeat.get('entity_type') not in ['file', 'domain', 'app']:
+        heartbeat['entity_type'] = 'file'
+
+    if heartbeat['entity_type'] != 'file' or os.path.isfile(heartbeat['entity']):
+
+        stats = get_file_stats(heartbeat['entity'],
+                                entity_type=heartbeat['entity_type'],
+                                lineno=heartbeat.get('lineno'),
+                                cursorpos=heartbeat.get('cursorpos'),
+                                plugin=args.plugin,
+                                alternate_language=heartbeat.get('alternate_language'))
+
+        project = heartbeat.get('project') or heartbeat.get('alternate_project')
+        branch = None
+        if heartbeat['entity_type'] == 'file':
+            project, branch = get_project_info(configs, heartbeat)
+
+        heartbeat['project'] = project
+        heartbeat['branch'] = branch
+        heartbeat['stats'] = stats
+        heartbeat['hostname'] = hostname
+        heartbeat['timeout'] = args.timeout
+        heartbeat['key'] = args.key
+        heartbeat['plugin'] = args.plugin
+        heartbeat['offline'] = args.offline
+        heartbeat['hidefilenames'] = args.hidefilenames
+        heartbeat['proxy'] = args.proxy
+        heartbeat['api_url'] = args.api_url
+
+        return send_heartbeat(**heartbeat)
+
+    else:
+        log.debug('File does not exist; ignoring this heartbeat.')
+        return SUCCESS
+
+
 def execute(argv=None):
     if argv:
         sys.argv = ['wakatime'] + argv
@@ -457,41 +511,25 @@ def execute(argv=None):
     setup_logging(args, __version__)
 
     try:
-        exclude = should_exclude(args.entity, args.include, args.exclude)
-        if exclude is not False:
-            log.debug(u('Skipping because matches exclude pattern: {pattern}').format(
-                pattern=u(exclude),
-            ))
-            return SUCCESS
 
-        if args.entity_type != 'file' or os.path.isfile(args.entity):
+        hostname = args.hostname or socket.gethostname()
 
-            stats = get_file_stats(args.entity,
-                                   entity_type=args.entity_type,
-                                   lineno=args.lineno,
-                                   cursorpos=args.cursorpos)
+        heartbeat = vars(args)
+        retval = process_heartbeat(args, configs, hostname, heartbeat)
 
-            project = args.project or args.alternate_project
-            branch = None
-            if args.entity_type == 'file':
-                project, branch = get_project_info(configs, args)
+        if args.extra_heartbeats:
+            try:
+                for heartbeat in json.loads(sys.stdin.readline()):
+                    retval = process_heartbeat(args, configs, hostname, heartbeat)
+            except json.JSONDecodeError:
+                retval = MALFORMED_HEARTBEAT_ERROR
 
-            kwargs = vars(args)
-            kwargs['project'] = project
-            kwargs['branch'] = branch
-            kwargs['stats'] = stats
-            hostname = args.hostname or socket.gethostname()
-            kwargs['hostname'] = hostname
-            kwargs['timeout'] = args.timeout
+        if retval == SUCCESS:
+            retval = sync_offline_heartbeats(args, hostname)
 
-            status = send_heartbeat(**kwargs)
-            if status == SUCCESS:
-                return sync_offline_heartbeats(args, hostname)
-            else:
-                return status
+        return retval
 
-        else:
-            log.debug('File does not exist; ignoring this heartbeat.')
-            return SUCCESS
     except:
         log.traceback()
+        print(traceback.format_exc())
+        return UNKNOWN_ERROR

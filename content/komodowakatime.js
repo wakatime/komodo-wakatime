@@ -107,7 +107,7 @@ var komodoWakatime = {
     var cmd = [
       this.escapePath(this.getPythonBinary()),
       this.escapePath(this.getWakaTimeCLI()),
-      '--file',
+      '--entity',
       this.escapePath(currentFile),
       '--plugin',
       this.escapePath('komodo-wakatime/' + this.VERSION),

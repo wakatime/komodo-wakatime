@@ -41,10 +41,10 @@ class CustomEncoder(json.JSONEncoder):
 
 class JsonFormatter(logging.Formatter):
 
-    def setup(self, timestamp, isWrite, entity, version, plugin, verbose,
+    def setup(self, timestamp, is_write, entity, version, plugin, verbose,
               warnings=False):
         self.timestamp = timestamp
-        self.isWrite = isWrite
+        self.is_write = is_write
         self.entity = entity
         self.version = version
         self.plugin = plugin
@@ -61,10 +61,10 @@ class JsonFormatter(logging.Formatter):
         if self.verbose:
             data['caller'] = record.pathname
             data['lineno'] = record.lineno
-            data['isWrite'] = self.isWrite
+            data['is_write'] = self.is_write
             data['file'] = self.entity
-            if not self.isWrite:
-                del data['isWrite']
+            if not self.is_write:
+                del data['is_write']
         data['level'] = record.levelname
         data['message'] = record.getMessage() if self.warnings else record.msg
         if not self.plugin:
@@ -73,7 +73,14 @@ class JsonFormatter(logging.Formatter):
 
 
 def traceback_formatter(*args, **kwargs):
-    logging.getLogger('WakaTime').error(traceback.format_exc())
+    if 'level' in kwargs and (kwargs['level'].lower() == 'warn' or kwargs['level'].lower() == 'warning'):
+        logging.getLogger('WakaTime').warning(traceback.format_exc())
+    elif 'level' in kwargs and kwargs['level'].lower() == 'info':
+        logging.getLogger('WakaTime').info(traceback.format_exc())
+    elif 'level' in kwargs and kwargs['level'].lower() == 'debug':
+        logging.getLogger('WakaTime').debug(traceback.format_exc())
+    else:
+        logging.getLogger('WakaTime').error(traceback.format_exc())
 
 
 def set_log_level(logger, args):
@@ -96,7 +103,7 @@ def setup_logging(args, version):
     formatter = JsonFormatter(datefmt='%Y/%m/%d %H:%M:%S %z')
     formatter.setup(
         timestamp=args.timestamp,
-        isWrite=args.isWrite,
+        is_write=args.is_write,
         entity=args.entity,
         version=version,
         plugin=args.plugin,
@@ -111,7 +118,7 @@ def setup_logging(args, version):
     warnings_formatter = JsonFormatter(datefmt='%Y/%m/%d %H:%M:%S %z')
     warnings_formatter.setup(
         timestamp=args.timestamp,
-        isWrite=args.isWrite,
+        is_write=args.is_write,
         entity=args.entity,
         version=version,
         plugin=args.plugin,
