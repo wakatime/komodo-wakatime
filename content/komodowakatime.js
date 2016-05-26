@@ -14,7 +14,7 @@ var komodoWakatime = {
     if (!this.getPythonBinary()) {
       ko.dialogs.alert('Unable to find Python binary. Please install Python or add Python to your PATH if already installed, then restart Komodo.', null, 'WakaTime Error');
     } else {
-      if (!this.getApiKey()) this.saveApiKey(this.promptApiKey());
+      if (!this.isValidApiKey(this.getApiKey())) this.saveApiKey(this.promptApiKey());
       this.setupListeners();
     }
   },
@@ -75,6 +75,11 @@ var komodoWakatime = {
   promptApiKey: function() {
     return ko.dialogs.prompt("Enter your wakatime.com api key:", 'WakaTime API Key', this.getApiKey());
   },
+  isValidApiKey: function(key) {
+    if (!key) return false;
+    var re = new RegExp('^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$', 'i');
+    return re.test(key);
+  },
   getCurrentFile: function() {
     var currentView = ko.views.manager.currentView;
     if (currentView) {
@@ -103,7 +108,6 @@ var komodoWakatime = {
     this.escapePath(this.getWakaTimeCLI());
     this.escapePath(currentFile);
     this.escapePath('komodo-wakatime/' + this.VERSION);
-    this.escapePath(this.getApiKey());
     var cmd = [
       this.escapePath(this.getPythonBinary()),
       this.escapePath(this.getWakaTimeCLI()),
