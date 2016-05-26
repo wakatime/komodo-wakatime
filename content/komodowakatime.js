@@ -9,7 +9,7 @@ var komodoWakatime = {
   lastHeartbeatFile: null,
   prefs: Components.classes['@activestate.com/koPrefService;1'].getService(Components.interfaces.koIPrefService).prefs,
 
-  onLoad: function() {
+  onLoad: function(event) {
     window.WakaTime = this;
     if (!this.getPythonBinary()) {
       ko.dialogs.alert('Unable to find Python binary. Please install Python or add Python to your PATH if already installed, then restart Komodo.', null, 'WakaTime Error');
@@ -33,8 +33,8 @@ var komodoWakatime = {
       '/usr/bin/python',
     ];
     for (var i=26; i<40; i++) {
-      locations.push(path.join('python' + i, 'pythonw'));
-      locations.push(path.join('Python' + i, 'pythonw'));
+      locations.push('\\python' + i + '\\pythonw');
+      locations.push('\\Python' + i + '\\pythonw');
     }
     for (var i=0; i<locations.length; i++) {
       var cmd = [this.escapePath(locations[i]), '--version'];
@@ -182,6 +182,4 @@ var komodoWakatime = {
   },
 };
 
-window.addEventListener('komodo-ui-started', function(event) {
-  komodoWakatime.onLoad.apply(komodoWakatime, [event]);
-}, true);
+window.addEventListener('komodo-post-startup', komodoWakatime.onLoad.bind(komodoWakatime));
