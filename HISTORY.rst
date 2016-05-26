@@ -3,6 +3,12 @@ History
 -------
 
 
+3.0.4 (2016-05-26)
+++++++++++++++++++
+
+- Minor bugfix when prompting for api key at startup.
+
+
 3.0.3 (2016-05-26)
 ++++++++++++++++++
 
