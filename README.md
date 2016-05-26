@@ -25,4 +25,17 @@ Installation
 Screen Shots
 ------------
 
-![Project Overview](https://wakatime.com/static/img/ScreenShots/ScreenShot-2014-10-29.png)
+![Project Overview](https://wakatime.com/static/img/ScreenShots/Screen-Shot-2016-03-21.png)
+
+
+Troubleshooting
+---------------
+
+Open your log file `Help -> Troubleshooting -> View Log File` and look for WakaTime related error messages.
+
+Also, [turn on debug mode][troubleshooting] then tail your `$HOME/.wakatime.log` file to debug wakatime cli problems.
+
+For more general troubleshooting information, see [wakatime/wakatime#troubleshooting][troubleshooting].
+
+
+[troubleshooting]: https://github.com/wakatime/wakatime#troubleshooting
