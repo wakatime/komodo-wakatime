@@ -32,7 +32,7 @@ var komodoWakatime = {
       '/usr/local/bin/python',
       '/usr/bin/python',
     ];
-    for (var i=26; i<40; i++) {
+    for (var i=40; i>=26; i--) {
       locations.push('\\python' + i + '\\pythonw');
       locations.push('\\Python' + i + '\\pythonw');
     }
