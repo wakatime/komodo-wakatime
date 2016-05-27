@@ -18,7 +18,8 @@ Installation
 1. Inside Komodo, navigate to `Tools` -> `Add-ons`.
 2. Press the left arrow key to go up one level.
 3. Search for `WakaTime` and press `Enter` to install.
-5. Enter your [api key](https://wakatime.com/settings#apikey) when prompted.
+4. When prompted, click `Restart Now`.
+5. Enter your [api key](https://wakatime.com/settings#apikey).
 6. Use Komodo and your time will be tracked for you automatically.
 7. Visit https://wakatime.com to see your logged time.
 
