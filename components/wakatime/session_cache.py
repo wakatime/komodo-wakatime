@@ -33,7 +33,7 @@ class SessionCache(object):
     DB_FILE = os.path.join(os.path.expanduser('~'), '.wakatime.db')
 
     def connect(self):
-        conn = sqlite3.connect(self.DB_FILE)
+        conn = sqlite3.connect(self.DB_FILE, isolation_level=None)
         c = conn.cursor()
         c.execute('''CREATE TABLE IF NOT EXISTS session (
             value BLOB)
@@ -57,7 +57,7 @@ class SessionCache(object):
             conn.commit()
             conn.close()
         except:  # pragma: nocover
-            log.traceback('debug')
+            log.traceback(logging.DEBUG)
 
 
     def get(self):
@@ -72,7 +72,7 @@ class SessionCache(object):
         try:
             conn, c = self.connect()
         except:
-            log.traceback('debug')
+            log.traceback(logging.DEBUG)
             return requests.session()
 
         session = None
@@ -83,12 +83,12 @@ class SessionCache(object):
             if row is not None:
                 session = pickle.loads(row[0])
         except:  # pragma: nocover
-            log.traceback('debug')
+            log.traceback(logging.DEBUG)
 
         try:
             conn.close()
         except:  # pragma: nocover
-            log.traceback('debug')
+            log.traceback(logging.DEBUG)
 
         return session if session is not None else requests.session()
 
@@ -105,4 +105,4 @@ class SessionCache(object):
             conn.commit()
             conn.close()
         except:
-            log.traceback('debug')
+            log.traceback(logging.DEBUG)

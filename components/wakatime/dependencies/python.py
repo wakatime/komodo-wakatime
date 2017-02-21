@@ -18,7 +18,9 @@ class PythonParser(TokenParser):
     nonpackage = False
     exclude = [
         r'^os$',
+        r'^sys$',
         r'^sys\.',
+        r'^__future__$',
     ]
 
     def parse(self):
@@ -48,9 +50,7 @@ class PythonParser(TokenParser):
                 self._process_import(token, content)
 
     def _process_operator(self, token, content):
-        if self.state is not None:
-            if content == '.':
-                self.nonpackage = True
+        pass
 
     def _process_punctuation(self, token, content):
         if content == '(':
@@ -73,8 +73,6 @@ class PythonParser(TokenParser):
             if self.state == 'from':
                 self.append(content, truncate=True, truncate_to=1)
                 self.state = 'from-2'
-            elif self.state == 'from-2' and content != 'import':
-                self.append(content, truncate=True, truncate_to=1)
             elif self.state == 'import':
                 self.append(content, truncate=True, truncate_to=1)
                 self.state = 'import-2'

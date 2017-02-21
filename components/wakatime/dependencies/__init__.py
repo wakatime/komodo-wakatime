@@ -12,7 +12,6 @@
 import logging
 import re
 import sys
-import traceback
 
 from ..compat import u, open, import_module
 from ..exceptions import NotYetImplemented
@@ -68,7 +67,7 @@ class TokenParser(object):
                 pass
             try:
                 with open(self.source_file, 'r', encoding=sys.getfilesystemencoding()) as fh:
-                    return self.lexer.get_tokens_unprocessed(fh.read(512000))
+                    return self.lexer.get_tokens_unprocessed(fh.read(512000))  # pragma: nocover
             except:
                 pass
         return []
@@ -118,9 +117,9 @@ class DependencyParser(object):
             try:
                 self.parser = getattr(module, class_name)
             except AttributeError:
-                log.debug('Module {0} is missing class {1}'.format(module.__name__, class_name))
+                log.debug('Parsing dependencies not supported for {0}.{1}'.format(module_name, class_name))
         except ImportError:
-            log.debug(traceback.format_exc())
+            log.debug('Parsing dependencies not supported for {0}.{1}'.format(module_name, class_name))
 
     def parse(self):
         if self.parser:

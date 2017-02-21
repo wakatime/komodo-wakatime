@@ -12,7 +12,6 @@
 
 import logging
 import os
-import traceback
 from time import sleep
 
 try:
@@ -35,7 +34,7 @@ class Queue(object):
         return self.db_file
 
     def connect(self):
-        conn = sqlite3.connect(self.get_db_file())
+        conn = sqlite3.connect(self.get_db_file(), isolation_level=None)
         c = conn.cursor()
         c.execute('''CREATE TABLE IF NOT EXISTS {0} (
             entity text,
@@ -70,7 +69,7 @@ class Queue(object):
             conn.commit()
             conn.close()
         except sqlite3.Error:
-            log.error(traceback.format_exc())
+            log.traceback()
 
     def pop(self):
         if not HAS_SQL:  # pragma: nocover
@@ -81,7 +80,7 @@ class Queue(object):
         try:
             conn, c = self.connect()
         except sqlite3.Error:
-            log.debug(traceback.format_exc())
+            log.traceback(logging.DEBUG)
             return None
         loop = True
         while loop and tries > -1:
@@ -119,11 +118,11 @@ class Queue(object):
                     }
                 loop = False
             except sqlite3.Error:  # pragma: nocover
-                log.debug(traceback.format_exc())
+                log.traceback(logging.DEBUG)
                 sleep(wait)
                 tries -= 1
         try:
             conn.close()
         except sqlite3.Error:  # pragma: nocover
-            log.debug(traceback.format_exc())
+            log.traceback(logging.DEBUG)
         return heartbeat

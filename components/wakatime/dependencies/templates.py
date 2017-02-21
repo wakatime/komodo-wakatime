@@ -71,6 +71,7 @@ KEYWORDS = [
 
 class HtmlDjangoParser(TokenParser):
     tags = []
+    opening_tag = False
     getting_attrs = False
     current_attr = None
     current_attr_value = None
@@ -81,7 +82,9 @@ class HtmlDjangoParser(TokenParser):
         return self.dependencies
 
     def _process_token(self, token, content):
-        if u(token) == 'Token.Name.Tag':
+        if u(token) == 'Token.Punctuation':
+            self._process_punctuation(token, content)
+        elif u(token) == 'Token.Name.Tag':
             self._process_tag(token, content)
         elif u(token) == 'Token.Literal.String':
             self._process_string(token, content)
@@ -92,26 +95,30 @@ class HtmlDjangoParser(TokenParser):
     def current_tag(self):
         return None if len(self.tags) == 0 else self.tags[0]
 
-    def _process_tag(self, token, content):
+    def _process_punctuation(self, token, content):
         if content.startswith('</') or content.startswith('/'):
             try:
                 self.tags.pop(0)
             except IndexError:
                 # ignore errors from malformed markup
                 pass
+            self.opening_tag = False
             self.getting_attrs = False
         elif content.startswith('<'):
+            self.opening_tag = True
+        elif content.startswith('>'):
+            self.opening_tag = False
+            self.getting_attrs = False
+
+    def _process_tag(self, token, content):
+        if self.opening_tag:
             self.tags.insert(0, content.replace('<', '', 1).strip().lower())
             self.getting_attrs = True
-        elif content.startswith('>'):
-            self.getting_attrs = False
         self.current_attr = None
 
     def _process_attribute(self, token, content):
         if self.getting_attrs:
             self.current_attr = content.lower().strip('=')
-        else:
-            self.current_attr = None
         self.current_attr_value = None
 
     def _process_string(self, token, content):
@@ -134,8 +141,6 @@ class HtmlDjangoParser(TokenParser):
             elif content.startswith('"') or content.startswith("'"):
                 if self.current_attr_value is None:
                     self.current_attr_value = content
-                else:
-                    self.current_attr_value += content
 
 
 class VelocityHtmlParser(HtmlDjangoParser):

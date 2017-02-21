@@ -38,15 +38,15 @@ class Git(BaseProject):
             head = os.path.join(self._project_base(), '.git', 'HEAD')
             try:
                 with open(head, 'r', encoding='utf-8') as fh:
-                    return u(fh.readline().strip().rsplit('/', 1)[-1])
+                    return self._get_branch_from_head_file(fh.readline())
             except UnicodeDecodeError:  # pragma: nocover
                 try:
                     with open(head, 'r', encoding=sys.getfilesystemencoding()) as fh:
-                        return u(fh.readline().strip().rsplit('/', 1)[-1])
+                        return self._get_branch_from_head_file(fh.readline())
                 except:
-                    log.traceback('warn')
+                    log.traceback(logging.WARNING)
             except IOError:  # pragma: nocover
-                log.traceback('warn')
+                log.traceback(logging.WARNING)
         return u('master')
 
     def _project_base(self):
@@ -64,3 +64,8 @@ class Git(BaseProject):
         if split_path[1] == '':
             return None
         return self._find_git_config_file(split_path[0])
+
+    def _get_branch_from_head_file(self, line):
+        if u(line.strip()).startswith('ref: '):
+            return u(line.strip().rsplit('/', 1)[-1])
+        return None
