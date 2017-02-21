@@ -130,7 +130,10 @@ var komodoWakatime = {
   },
   sent: function(cmd, code, stdout, stderr) {
     if (code !== 0) {
-      if (code !== 102 && code !== 103 && !this._errorShown) {
+      if (code === 104) {
+        ko.dialogs.alert('Your api key is invalid.', 'WakaTime Error');
+        this.saveApiKey(this.promptApiKey());
+      } else if (code !== 102 && code !== 103 && !this._errorShown) {
         ko.dialogs.alert('Exit Status: ' + code, stdout + stderr, 'WakaTime Error');
         this._errorShown = true;
       }
