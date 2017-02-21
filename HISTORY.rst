@@ -3,6 +3,19 @@ History
 -------
 
 
+3.0.5 (2017-02-20)
+++++++++++++++++++
+
+- Upgrade wakatime-cli to v7.0.2.
+- Support for SOCKS proxies.
+- Support NTLM proxy format like domain\\user:pass.
+- Allow boolean or list of regex patterns for hidefilenames config setting.
+- New WAKATIME_HOME env variable for setting path to config and log files. #67
+- New hostname setting in config file to set machine hostname. Hostname
+  argument takes priority over hostname from config file.
+- Support for Python 3.6.
+
+
 3.0.4 (2016-05-26)
 ++++++++++++++++++
 
