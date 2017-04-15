@@ -15,7 +15,7 @@ Features
 Installation
 ------------
 
-1. Inside Komodo, navigate to `Tools` -> `Add-ons`.
+1. Inside Komodo, navigate to `Tools` → `Add-ons`.
 2. Press the left arrow key to go up one level.
 3. Search for `WakaTime` and press `Enter` to install.
 4. When prompted, click `Restart Now`.
@@ -32,7 +32,7 @@ Screen Shots
 Troubleshooting
 ---------------
 
-Open your log file `Help -> Troubleshooting -> View Log File` and look for WakaTime related error messages.
+Open your log file `Help → Troubleshooting → View Log File` and look for WakaTime related error messages.
 
 Also, [turn on debug mode][troubleshooting] then tail your `$HOME/.wakatime.log` file to debug wakatime cli problems.
 
