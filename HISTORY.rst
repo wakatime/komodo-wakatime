@@ -3,6 +3,21 @@ History
 -------
 
 
+3.0.6 (2017-05-24)
+++++++++++++++++++
+
+- Upgrade wakatime-cli to v8.0.2.
+- Only treat proxy string as NTLM proxy after unable to connect with HTTPS and
+  SOCKS proxy.
+- Ability to disable SSL cert verification. wakatime/wakatime#90
+- Disable line count stats for files larger than 2MB to improve performance.
+- Config file not needed when passing api key via command line.
+- Allow colons in [projectmap] config section. wakatime/wakatime#83
+- When unable to detect language and debug mode turned on, log any tracebacks.
+- Increase priority of F# and TypeScript languages.
+- Add six library to satisfy missing dependency from ntlm-auth.
+
+
 3.0.5 (2017-02-20)
 ++++++++++++++++++
 
