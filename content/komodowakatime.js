@@ -1,5 +1,4 @@
 var komodoWakatime = {
-
   VERSION: '3.0.6',
 
   heartbeatFrequency: 2,
@@ -7,12 +6,18 @@ var komodoWakatime = {
 
   lastHeartbeatTime: 0,
   lastHeartbeatFile: null,
-  prefs: Components.classes['@activestate.com/koPrefService;1'].getService(Components.interfaces.koIPrefService).prefs,
+  prefs: Components.classes['@activestate.com/koPrefService;1'].getService(
+    Components.interfaces.koIPrefService,
+  ).prefs,
 
   onLoad: function(event) {
     window.WakaTime = this;
     if (!this.getPythonBinary()) {
-      ko.dialogs.alert('Unable to find Python binary. Please install Python or add Python to your PATH if already installed, then restart Komodo.', null, 'WakaTime Error');
+      ko.dialogs.alert(
+        'Unable to find Python binary. Please install Python or add Python to your PATH if already installed, then restart Komodo.',
+        null,
+        'WakaTime Error',
+      );
     } else {
       if (!this.isValidApiKey(this.getApiKey())) this.saveApiKey(this.promptApiKey());
       this.setupListeners();
@@ -26,22 +31,19 @@ var komodoWakatime = {
   },
   getPythonBinary: function() {
     if (this._pythonLocation) return this._pythonLocation;
-    var locations = [
-      'pythonw',
-      'python',
-      '/usr/local/bin/python',
-      '/usr/bin/python',
-    ];
-    for (var i=40; i>=26; i--) {
+    var locations = ['pythonw', 'python', '/usr/local/bin/python', '/usr/bin/python'];
+    for (var i = 40; i >= 26; i--) {
       locations.push('\\python' + i + '\\pythonw');
       locations.push('\\Python' + i + '\\pythonw');
     }
-    for (var i=0; i<locations.length; i++) {
+    for (var i = 0; i < locations.length; i++) {
       var cmd = [this.escapePath(locations[i]), '--version'];
       var stdout = {};
       var stderr = {};
       var context = this;
-      var process = Components.classes["@activestate.com/koRunService;1"].getService(Components.interfaces.koIRunService);
+      var process = Components.classes['@activestate.com/koRunService;1'].getService(
+        Components.interfaces.koIRunService,
+      );
       var result = process.RunAndCaptureOutput(cmd.join(' '), '', '', '', stdout, stderr);
       if (result == 0) {
         this._pythonLocation = locations[i];
@@ -52,10 +54,9 @@ var komodoWakatime = {
   },
   getWakaTimeCLI: function() {
     if (this._wakatimeCLI) return this._wakatimeCLI;
-    var currProfPath = Components.classes["@mozilla.org/file/directory_service;1"]
+    var currProfPath = Components.classes['@mozilla.org/file/directory_service;1']
       .getService(Components.interfaces.nsIProperties)
-      .get("PrefD", Components.interfaces.nsILocalFile)
-      .path;
+      .get('PrefD', Components.interfaces.nsILocalFile).path;
     var plugin_dir = currProfPath + '/extensions/wakatime@wakatime.com';
     var cli = plugin_dir + '/components/wakatime/cli.py';
     this._wakatimeCLI = cli;
@@ -63,7 +64,8 @@ var komodoWakatime = {
   },
   getApiKey: function() {
     if (this._apiKey) return this._apiKey;
-    if (this.prefs.hasStringPref(this.prefName)) this._apiKey = this.prefs.getStringPref(this.prefName);
+    if (this.prefs.hasStringPref(this.prefName))
+      this._apiKey = this.prefs.getStringPref(this.prefName);
     return this._apiKey;
   },
   saveApiKey: function(key) {
@@ -73,11 +75,18 @@ var komodoWakatime = {
     }
   },
   promptApiKey: function() {
-    return ko.dialogs.prompt("Enter your wakatime.com api key:", 'WakaTime API Key', this.getApiKey());
+    return ko.dialogs.prompt(
+      'Enter your wakatime.com api key:',
+      'WakaTime API Key',
+      this.getApiKey(),
+    );
   },
   isValidApiKey: function(key) {
     if (!key) return false;
-    var re = new RegExp('^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$', 'i');
+    var re = new RegExp(
+      '^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$',
+      'i',
+    );
     return re.test(key);
   },
   getCurrentFile: function() {
@@ -89,7 +98,7 @@ var komodoWakatime = {
   },
   enoughTimePassed: function() {
     var d = new Date();
-    if ((d.getTime() - this.lastHeartbeatTime) > this.heartbeatFrequency * 60000) {
+    if (d.getTime() - this.lastHeartbeatTime > this.heartbeatFrequency * 60000) {
       return true;
     }
     return false;
@@ -101,7 +110,7 @@ var komodoWakatime = {
     return false;
   },
   escapePath: function(arg) {
-    return '"' + arg.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + '"';
+    return '"' + arg.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
   },
   sendHeartbeat: function(currentFile, isWrite) {
     this.escapePath(this.getPythonBinary());
@@ -121,8 +130,18 @@ var komodoWakatime = {
     if (isWrite) cmd.push('--write');
 
     var context = this;
-    var process = Components.classes["@activestate.com/koRunService;1"].getService(Components.interfaces.koIRunService);
-    var result = process.RunAsync(cmd.join(' '), function() { context.sent.apply(context, arguments); }, '', '', '');
+    var process = Components.classes['@activestate.com/koRunService;1'].getService(
+      Components.interfaces.koIRunService,
+    );
+    var result = process.RunAsync(
+      cmd.join(' '),
+      function() {
+        context.sent.apply(context, arguments);
+      },
+      '',
+      '',
+      '',
+    );
 
     this.lastHeartbeatFile = currentFile;
     var d = new Date();
@@ -145,12 +164,20 @@ var komodoWakatime = {
   },
   setupListeners: function() {
     var context = this;
-    window.addEventListener('file_saved', function(event) {
-      context.fileSavedEvent.apply(context, [event]);
-    }, false);
-    window.addEventListener('current_view_changed', function(event) {
-      context.fileChangedEvent.apply(context, [event]);
-    }, true);
+    window.addEventListener(
+      'file_saved',
+      function(event) {
+        context.fileSavedEvent.apply(context, [event]);
+      },
+      false,
+    );
+    window.addEventListener(
+      'current_view_changed',
+      function(event) {
+        context.fileChangedEvent.apply(context, [event]);
+      },
+      true,
+    );
     var view = ko.views.manager.currentView || this._currentView;
     this.watchView(view);
   },
