@@ -34,11 +34,6 @@ Exit code used when there was an unhandled exception.
 """
 UNKNOWN_ERROR = 105
 
-""" Malformed Heartbeat Error
-Exit code used when the JSON input from `--extra-heartbeats` is malformed.
-"""
-MALFORMED_HEARTBEAT_ERROR = 106
-
 """ Connection Error
 Exit code used when there was proxy or other problem connecting to the WakaTime
 API servers.
@@ -50,3 +45,12 @@ Files larger than this in bytes will not have a line count stat for performance.
 Default is 2MB.
 """
 MAX_FILE_SIZE_SUPPORTED = 2000000
+
+""" Default limit of number of offline heartbeats to sync before exiting."""
+DEFAULT_SYNC_OFFLINE_ACTIVITY = 100
+
+""" Number of heartbeats per api request.
+Even when sending more heartbeats, this is the number of heartbeats sent per
+individual https request to the WakaTime API.
+"""
+HEARTBEATS_PER_REQUEST = 25

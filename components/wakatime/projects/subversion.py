@@ -12,10 +12,10 @@
 import logging
 import os
 import platform
-from subprocess import Popen, PIPE
+from subprocess import PIPE
 
 from .base import BaseProject
-from ..compat import u, open
+from ..compat import u, open, Popen
 try:
     from collections import OrderedDict
 except ImportError:  # pragma: nocover
@@ -41,6 +41,11 @@ class Subversion(BaseProject):
             return None  # pragma: nocover
         return u(self.info['URL'].split('/')[-1].split('\\')[-1])
 
+    def folder(self):
+        if 'Repository Root' not in self.info:
+            return None
+        return self.info['Repository Root']
+
     def _find_binary(self):
         if self.binary_location:
             return self.binary_location
@@ -65,24 +70,22 @@ class Subversion(BaseProject):
         if not self._is_mac() or self._has_xcode_tools():
             stdout = None
             try:
-                os.environ['LANG'] = 'en_US'
-                stdout, stderr = Popen([
-                    self._find_binary(), 'info', os.path.realpath(path)
-                ], stdout=PIPE, stderr=PIPE).communicate()
+                stdout, stderr = Popen(
+                    [self._find_binary(), 'info', os.path.realpath(path)],
+                    stdout=PIPE,
+                    stderr=PIPE,
+                ).communicate()
             except OSError:
                 pass
             else:
                 if stdout:
                     for line in stdout.splitlines():
-                        line = u(line)
-                        line = line.split(': ', 1)
+                        line = u(line).split(': ', 1)
                         if len(line) == 2:
                             info[line[0]] = line[1]
         return info
 
     def _find_project_base(self, path, found=False):
-        if platform.system() == 'Windows':
-            return False  # pragma: nocover
         path = os.path.realpath(path)
         if os.path.isfile(path):
             path = os.path.split(path)[0]
@@ -112,4 +115,3 @@ class Subversion(BaseProject):
         except:
             pass
         return False
-

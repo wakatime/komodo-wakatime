@@ -9,12 +9,17 @@
     :license: BSD, see LICENSE for more details.
 """
 
+
 import codecs
+import os
+import platform
+import subprocess
 import sys
 
 
 is_py2 = (sys.version_info[0] == 2)
 is_py3 = (sys.version_info[0] == 3)
+is_win = platform.system() == 'Windows'
 
 
 if is_py2:  # pragma: nocover
@@ -82,7 +87,7 @@ except ImportError:  # pragma: nocover
         if name.startswith('.'):
             if not package:
                 raise TypeError("relative imports require the 'package' "
-                                + "argument")
+                                "argument")
             level = 0
             for character in name:
                 if character != '.':
@@ -91,3 +96,27 @@ except ImportError:  # pragma: nocover
             name = _resolve_name(name[level:], package, level)
         __import__(name)
         return sys.modules[name]
+
+
+try:
+    from .packages import simplejson as json
+except (ImportError, SyntaxError):  # pragma: nocover
+    import json
+
+
+class Popen(subprocess.Popen):
+    """Patched Popen to prevent opening cmd window on Windows platform."""
+
+    def __init__(self, *args, **kwargs):
+        startupinfo = kwargs.get('startupinfo')
+        if is_win or True:
+            try:
+                startupinfo = startupinfo or subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            except AttributeError:
+                pass
+        kwargs['startupinfo'] = startupinfo
+        if 'env' not in kwargs:
+            kwargs['env'] = os.environ.copy()
+            kwargs['env']['LANG'] = 'en-US' if is_win else 'en_US.UTF-8'
+        subprocess.Popen.__init__(self, *args, **kwargs)
