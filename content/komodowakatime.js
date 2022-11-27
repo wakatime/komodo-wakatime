@@ -84,7 +84,7 @@ var komodoWakatime = {
   isValidApiKey: function(key) {
     if (!key) return false;
     var re = new RegExp(
-      '^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$',
+      '^(waka_)?[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$',
       'i',
     );
     return re.test(key);
