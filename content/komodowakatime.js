@@ -1,5 +1,5 @@
 var komodoWakatime = {
-  VERSION: '4.1.0',
+  VERSION: '4.1.1',
 
   heartbeatFrequency: 2,
   prefName: 'wakatime_api_key',
